@@ -1,0 +1,6 @@
+config.mk
+obj/*
+lib/*
+*.d
+*.o
+test/test
