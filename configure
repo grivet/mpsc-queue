@@ -34,6 +34,7 @@ Some influential environment variables:
   CC                      C compiler command [detected]
   CFLAGS                  C compiler flags [-Os -pipe ...]
   LDFLAGS                 C linker flags [-Wl,--gc-sections ...]
+  LDLIBS                  C linker libs [-lm ...]
   CROSS_COMPILE           prefix for cross compiler and tools [none]
 
 Use these variables to override the choices made by configure.
@@ -123,6 +124,7 @@ AR=*) AR=${arg#*=} ;;
 CC=*) CC=${arg#*=} ;;
 CFLAGS=*) CFLAGS=${arg#*=} ;;
 LDFLAGS=*) LDFLAGS=${arg#*=} ;;
+LDLIBS=*) LDLIBS=${arg#*=} ;;
 CROSS_COMPILE=*) CROSS_COMPILE=${arg#*=} ;;
 esac
 done
@@ -297,6 +299,7 @@ CFLAGS = $CFLAGS
 CFLAGS_AUTO = $CFLAGS_AUTO
 LDFLAGS = $LDFLAGS
 LDFLAGS_AUTO = $LDFLAGS_AUTO
+LDLIBS = $LDLIBS
 CROSS_COMPILE = $CROSS_COMPILE
 
 CONFIGURED = yes
