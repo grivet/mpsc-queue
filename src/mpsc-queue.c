@@ -16,6 +16,7 @@ mpsc_queue_init(struct mpsc_queue *queue)
 void
 mpsc_queue_destroy(struct mpsc_queue *queue)
 {
+    (void)queue;
 }
 
 enum mpsc_queue_poll_result
