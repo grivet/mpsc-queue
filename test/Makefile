@@ -20,7 +20,7 @@ $(TEST): $(OBJS)
 test: $(TEST)
 
 run: test
-	LD_LIBRARY_PATH=$(srcdir)/lib $(WRAPPER) $(TEST)
+	LD_LIBRARY_PATH=$(srcdir)/lib $(WRAPPER) $(TEST) -n 1000000 -c 2
 
 -include obj/*.d
 -include test/*.d

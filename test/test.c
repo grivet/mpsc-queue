@@ -498,13 +498,17 @@ run_benchmarks(int argc, const char *argv[])
     size_t i;
 
     n_elems = 1000000;
-    if (argc > 1) {
-        assert(str_to_uint(argv[1], 10, &n_elems));
-    }
-
     n_threads = 2;
-    if (argc > 2) {
-        assert(str_to_uint(argv[2], 10, &n_threads));
+
+    for (i = 1; i < (size_t)argc; i++) {
+        if (!strcmp(argv[i], "-n")) {
+            assert(str_to_uint(argv[++i], 10, &n_elems));
+        } else if (!strcmp(argv[i], "-c")) {
+            assert(str_to_uint(argv[++i], 10, &n_threads));
+        } else {
+            printf("Usage: %s [-n <elems: uint>] [-c <cores: uint>]\n", argv[0]);
+            exit(1);
+        }
     }
 
     elements = xcalloc(n_elems, sizeof *elements);
