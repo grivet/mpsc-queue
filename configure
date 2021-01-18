@@ -63,23 +63,6 @@ stripdir () {
 while eval "fnmatch '*/' \"\${$1}\"" ; do eval "$1=\${$1%/}" ; done
 }
 
-trycppif () {
-printf "checking preprocessor condition %s... " "$1"
-{
-echo "typedef int x;"
-echo "#if $1"
-echo "#error yes"
-echo "#endif"
-} > "$tmpc"
-if $CC $2 -c -o /dev/null "$tmpc" >/dev/null 2>&1 ; then
-printf "false\n"
-return 1
-else
-printf "true\n"
-return 0
-fi
-}
-
 tryflag () {
 printf "checking whether compiler accepts %s... " "$2"
 echo "typedef int x;" > "$tmpc"
