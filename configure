@@ -10,8 +10,6 @@ INCLUDEDIR="\$(PREFIX)/include"
 
 debug=no
 warnings=no
-shared=yes
-static=yes
 
 usage () {
 cat <<EOF
@@ -31,12 +29,11 @@ Installation directories:
 Optional features:
   --enable-debug          build with debugging information [debug=$debug]
   --enable-warnings       build with recommended warnings flags [warnings=$warnings]
-  --disable-shared        inhibit building shared library [shared=$shared]
-  --disable-static        inhibit building static library [static=$static]
 
 Some influential environment variables:
   CC                      C compiler command [detected]
   CFLAGS                  C compiler flags [-Os -pipe ...]
+  LDFLAGS                 C linker flags [-Wl,--gc-sections ...]
   CROSS_COMPILE           prefix for cross compiler and tools [none]
 
 Use these variables to override the choices made by configure.
@@ -117,10 +114,6 @@ case "$arg" in
 --bindir=*) BINDIR=${arg#*=} ;;
 --libdir=*) LIBDIR=${arg#*=} ;;
 --includedir=*) INCLUDEDIR=${arg#*=} ;;
---enable-shared|--enable-shared=yes) shared=yes ;;
---disable-shared|--enable-shared=no) shared=no ;;
---enable-static|--enable-static=yes) static=yes ;;
---disable-static|--enable-static=no) static=no ;;
 --enable-debug|--enable-debug=yes) debug=yes ;;
 --disable-debug|--enable-debug=no) debug=no ;;
 --enable-warnings|--enable-warnings=yes) warnings=yes ;;
@@ -129,7 +122,6 @@ case "$arg" in
 AR=*) AR=${arg#*=} ;;
 CC=*) CC=${arg#*=} ;;
 CFLAGS=*) CFLAGS=${arg#*=} ;;
-CPPFLAGS=*) CPPFLAGS=${arg#*=} ;;
 LDFLAGS=*) LDFLAGS=${arg#*=} ;;
 CROSS_COMPILE=*) CROSS_COMPILE=${arg#*=} ;;
 esac
@@ -208,7 +200,7 @@ tryflag CFLAGS_AUTO -pipe
 # pointer is no longer needed for debugging.
 #
 if fnmatch '-g*|*\ -g*' "$CFLAGS_AUTO $CFLAGS" ; then :
-else 
+else
 tryflag CFLAGS_AUTO -fomit-frame-pointer
 fi
 
@@ -309,8 +301,6 @@ CROSS_COMPILE = $CROSS_COMPILE
 
 CONFIGURED = yes
 EOF
-test "x$static" = xno && echo "STATIC_LIBS ="
-test "x$shared" = xno && echo "SHARED_LIBS ="
 exec 1>&3 3>&-
 
 printf "done\n"

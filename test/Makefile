@@ -11,16 +11,16 @@ include $(srcdir)/config.mk
 
 TEST = test/test
 
-test/%.o: test/%.c | lib/$(LIB) Makefile
+test/%.o: test/%.c | Makefile
 	$(CC) -pthread -std=c11 -MD -Wall -Wextra $(CFLAGS) -c -I$(srcdir)/src -o $@ $<
 
-$(TEST): $(OBJS)
-	$(CC) -pthread -L$(srcdir)/lib -o $@ $^ -lmpsc
+$(TEST): $(OBJS) lib/$(LIB).a
+	$(CC) -pthread -o $@ $^ $(LDLIBS)
 
 test: $(TEST)
 
 run: test
-	LD_LIBRARY_PATH=$(srcdir)/lib $(WRAPPER) $(TEST) -n 1000000 -c 2
+	$(WRAPPER) $(TEST) -n 1000000 -c 2
 
 -include obj/*.d
 -include test/*.d

@@ -8,7 +8,9 @@ endif
 MAKEFLAGS += --jobs=$(shell nproc)
 MAKEFLAGS += --no-print-directory
 
-LIB = libmpsc.so
+LIB = libmpsc
+LIBS = lib/$(LIB).so \
+       lib/$(LIB).a
 
 SRCS = $(sort $(wildcard src/*.c))
 OBJS = $(SRCS:src/%.c=obj/%.o)
@@ -16,10 +18,13 @@ INCLUDES = $(sort $(wildcard src/*.h))
 
 CFLAGS_ALL = -std=c11 -MD $(CFLAGS_AUTO) $(CFLAGS)
 
-all: lib/$(LIB)
+all: $(LIBS)
 
-lib/$(LIB): $(OBJS) | mkdir-lib
-	$(CC) -shared $(CFLAGS_ALL) $(LDFLAGS_ALL) $^ -o $@
+lib/%.so: $(OBJS) | mkdir-lib
+	$(CC) -shared $(CFLAGS_ALL) $(LDFLAGS_ALL) $^ -o $@ $(LDLIBS)
+
+lib/%.a: $(OBJS) | mkdir-lib
+	$(AR) -crs $@ $^
 
 obj/%.o: src/%.c config.mk Makefile | mkdir-obj
 	$(CC) $(CFLAGS_ALL) -c -o $@ $<
