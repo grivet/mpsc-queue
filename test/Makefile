@@ -12,7 +12,7 @@ include $(srcdir)/config.mk
 TEST = test/test
 
 test/%.o: test/%.c | Makefile
-	$(CC) -pthread -std=c11 -MD -Wall -Wextra $(CFLAGS) -c -I$(srcdir)/src -o $@ $<
+	$(CC) -pthread -std=c11 -MD -Wall -Wextra $(CFLAGS_ALL) -c -I$(srcdir)/src -o $@ $<
 
 $(TEST): $(OBJS) lib/$(LIB).a
 	$(CC) -pthread -o $@ $^ $(LDLIBS_ALL)
