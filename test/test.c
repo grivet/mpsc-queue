@@ -495,6 +495,7 @@ benchmark_mpsc_queue_pop(void)
 static void
 run_benchmarks(int argc, const char *argv[])
 {
+    bool only_mpsc_queue = false;
     size_t i;
 
     n_elems = 1000000;
@@ -505,6 +506,8 @@ run_benchmarks(int argc, const char *argv[])
             assert(str_to_uint(argv[++i], 10, &n_elems));
         } else if (!strcmp(argv[i], "-c")) {
             assert(str_to_uint(argv[++i], 10, &n_threads));
+        } else if (!strcmp(argv[i], "--perf")) {
+            only_mpsc_queue = true;
         } else {
             printf("Usage: %s [-n <elems: uint>] [-c <cores: uint>]\n", argv[0]);
             exit(1);
@@ -522,8 +525,10 @@ run_benchmarks(int argc, const char *argv[])
     }
     printf("   Avg\n");
 
-    benchmark_ts_mpsc_queue_flush();
-    benchmark_ts_mpsc_queue_pop();
+    if (!only_mpsc_queue) {
+        benchmark_ts_mpsc_queue_flush();
+        benchmark_ts_mpsc_queue_pop();
+    }
     benchmark_mpsc_queue_pop();
 
     free(thread_working_ms);
