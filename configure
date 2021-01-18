@@ -10,6 +10,7 @@ INCLUDEDIR="\$(PREFIX)/include"
 
 debug=no
 warnings=no
+asan=no
 
 usage () {
 cat <<EOF
@@ -29,6 +30,7 @@ Installation directories:
 Optional features:
   --enable-debug          build with debugging information [debug=$debug]
   --enable-warnings       build with recommended warnings flags [warnings=$warnings]
+  --enable-asan           build with address sanitizer [asan=$asan]
 
 Some influential environment variables:
   CC                      C compiler command [detected]
@@ -119,6 +121,8 @@ case "$arg" in
 --disable-debug|--enable-debug=no) debug=no ;;
 --enable-warnings|--enable-warnings=yes) warnings=yes ;;
 --disable-warnings|--enable-warnings=no) warnings=no ;;
+--enable-asan|--enable-asan=yes) asan=yes ;;
+--disable-asan|--enable-asan=no) asan=no ;;
 -* ) echo "$0: unknown option $arg" ;;
 AR=*) AR=${arg#*=} ;;
 CC=*) CC=${arg#*=} ;;
@@ -256,6 +260,14 @@ tryflag CFLAGS_AUTO -Wno-unknown-pragmas
 tryflag CFLAGS_AUTO -Wno-pointer-to-int-cast
 fi
 
+if test "x$asan" = xyes ; then
+tryflag CFLAGS_AUTO -g3
+tryflag CFLAGS_AUTO -fsanitize=address
+tryflag CFLAGS_AUTO -fno-omit-frame-pointer
+tryflag CFLAGS_AUTO -fno-common
+LDLIBS_AUTO="$LDLIBS_AUTO -fsanitize=address"
+fi
+
 # Reduce space lost to padding for alignment purposes by sorting data
 # objects according to their alignment requirements. This approximates
 # optimal packing.
@@ -300,6 +312,7 @@ CFLAGS_AUTO = $CFLAGS_AUTO
 LDFLAGS = $LDFLAGS
 LDFLAGS_AUTO = $LDFLAGS_AUTO
 LDLIBS = $LDLIBS
+LDLIBS_AUTO = $LDLIBS_AUTO
 CROSS_COMPILE = $CROSS_COMPILE
 
 CONFIGURED = yes

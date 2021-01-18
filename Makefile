@@ -17,11 +17,12 @@ OBJS = $(SRCS:src/%.c=obj/%.o)
 INCLUDES = $(sort $(wildcard src/*.h))
 
 CFLAGS_ALL = -std=c11 -MD $(CFLAGS_AUTO) $(CFLAGS)
+LDLIBS_ALL = $(LDLIBS_AUTO) $(LDLIBS)
 
 all: $(LIBS)
 
 lib/%.so: $(OBJS) | mkdir-lib
-	$(CC) -shared $(CFLAGS_ALL) $(LDFLAGS_ALL) $^ -o $@ $(LDLIBS)
+	$(CC) -shared $(CFLAGS_ALL) $(LDFLAGS_ALL) $^ -o $@ $(LDLIBS_ALL)
 
 lib/%.a: $(OBJS) | mkdir-lib
 	$(AR) -crs $@ $^
