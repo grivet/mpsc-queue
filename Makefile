@@ -1,63 +1,30 @@
 # GNU Make
 
-include config.mk
-ifeq ($(CONFIGURED),)
-$(error Please run "./configure" before using make)
-endif
-
-MAKEFLAGS += --jobs=$(shell nproc)
-MAKEFLAGS += --no-print-directory
-
 LIB = libmpsc
-LIBS = lib/$(LIB).so \
-       lib/$(LIB).a
+LIBS = lib/$(LIB).so lib/$(LIB).a
 
-SRCS = $(sort $(wildcard src/*.c))
-OBJS = $(SRCS:src/%.c=obj/%.o)
-INCLUDES = $(sort $(wildcard src/*.h))
+OBJS = src/mpsc-queue.o
 
-CFLAGS_ALL = -std=c11 -MD $(CFLAGS_AUTO) $(CFLAGS)
-LDLIBS_ALL = $(LDLIBS_AUTO) $(LDLIBS)
+CFLAGS := -std=c11 -MD -Wall -Wextra -Werror $(CFLAGS)
 
 all: $(LIBS)
 
-lib/%.so: $(OBJS) | mkdir-lib
-	$(CC) -shared $(CFLAGS_ALL) $(LDFLAGS_ALL) $^ -o $@ $(LDLIBS_ALL)
+lib/%.so: $(OBJS)
+	@mkdir -p lib
+	$(CC) -shared $(CFLAGS) $^ -o $@ $(LDLIBS)
 
-lib/%.a: $(OBJS) | mkdir-lib
+lib/%.a: $(OBJS)
+	@mkdir -p lib
 	$(AR) -crs $@ $^
 
-obj/%.o: src/%.c config.mk Makefile | mkdir-obj
-	$(CC) $(CFLAGS_ALL) -c -o $@ $<
-
-INSTALL = $(CURDIR)/tools/install.sh
-
-$(INCLUDEDIR)/%.h: src/%.h
-	$(INSTALL) -D -m 644 $< $@
-
-install-bin: $(LIB:lib/%=$(BINDIR)/%)
-
-install-headers: $(INCLUDES:src/%=$(INCLUDEDIR)/%)
-
-install: install-bin install-headers
-
-TO_BE_CLEANED += lib
-mkdir-lib:
-	@mkdir -p lib
-
-TO_BE_CLEANED += obj
-mkdir-obj:
-	@mkdir -p obj
+src/%.o: src/%.c Makefile
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 srcdir := $(CURDIR)
 include test/Makefile
 
--include obj/*.d
+-include src/*.d
 
 .PHONY: clean
 clean:
-	rm -rf $(TO_BE_CLEANED)
-
-.PHONY: distclean
-distclean: clean
-	rm -f config.mk
+	rm -f $(LIBS) $(OBJS) src/*.d

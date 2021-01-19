@@ -37,7 +37,6 @@ should be done outside cancellable sections.**
 ## Compilation
 
 ```shell
-./configure
 make      # Build the lib
 make test # Build the test app
 make run  # Run the test app
