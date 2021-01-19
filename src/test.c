@@ -477,7 +477,6 @@ benchmark_mpsc_queue_pop(void)
     }
     printf(" %6" PRIu64 " ms\n", avg);
 
-    mpsc_queue_destroy(&queue);
     pthread_barrier_destroy(&barrier);
     free(threads);
 

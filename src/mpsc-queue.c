@@ -13,12 +13,6 @@ mpsc_queue_init(struct mpsc_queue *queue)
     atomic_store_explicit(&queue->stub.next, NULL, memory_order_relaxed);
 }
 
-void
-mpsc_queue_destroy(struct mpsc_queue *queue)
-{
-    (void)queue;
-}
-
 enum mpsc_queue_poll_result
 mpsc_queue_poll(struct mpsc_queue *queue, struct mpsc_queue_node **node)
 {

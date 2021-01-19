@@ -27,7 +27,6 @@ enum mpsc_queue_poll_result {
 };
 
 void mpsc_queue_init(struct mpsc_queue *queue);
-void mpsc_queue_destroy(struct mpsc_queue *queue);
 
 enum mpsc_queue_poll_result
 mpsc_queue_poll(struct mpsc_queue *queue, struct mpsc_queue_node **node);
