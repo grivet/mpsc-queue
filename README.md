@@ -11,6 +11,11 @@ A simple C11 implementation of Vyukov multi-producer, single-consumer lockless q
 
 - Unbounded: The queue is a linked-list and does not limit the number of elements.
 
+- Wait-free writes: writers will never wait for queue state sync when enqueuing.
+
+- Lock-free reads: the reader might wait for the queue state to become consistent,
+  but will not take locks doing so.
+
 - Intrusive: Queue elements are allocated as part of larger objects.
   Objects are retrieved by offset manipulation.
 
@@ -49,8 +54,7 @@ Another possible implementation of an MPSC queue requiring only one Compare-And-
 insertion is based on a Treiber stack [2], being reversed during element removal.
 
 With low number of threads, on x86 both queues are shown to be competitive. As thread numbers grow
-however, an exchange operation can scale, while CAS will not. This makes the Vyukov queue better
-in terms of performance.
+however, an exchange operation can scale, while CAS will not.
 
 ## References
 
