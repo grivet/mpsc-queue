@@ -33,117 +33,6 @@ test_ts_mpsc_queue_mark_element(struct ts_mpsc_queue_node *node,
     *counter += 1;
 }
 
-static void
-test_ts_mpsc_queue_flush(void)
-{
-    struct element elements[100];
-    struct ts_mpsc_queue_node *node;
-    struct ts_mpsc_queue queue;
-    unsigned int counter;
-    size_t i;
-
-    memset(elements, 0, sizeof(elements));
-    ts_mpsc_queue_init(&queue);
-
-    for (i = 0; i < ARRAY_SIZE(elements); i++) {
-        ts_mpsc_queue_insert(&queue, &elements[i].node.ts);
-    }
-
-    counter = 0;
-    TS_MPSC_QUEUE_FOR_EACH(node, ts_mpsc_queue_flush(&queue)) {
-        test_ts_mpsc_queue_mark_element(node, 1, &counter);
-    }
-
-    assert(ts_mpsc_queue_is_empty(&queue));
-
-    ts_mpsc_queue_destroy(&queue);
-    assert(counter == ARRAY_SIZE(elements));
-    for (i = 0; i < ARRAY_SIZE(elements); i++) {
-        assert(elements[i].mark == 1);
-    }
-}
-
-static void
-test_ts_mpsc_queue_mixed_flush(void)
-{
-    struct element elements[100];
-    struct ts_mpsc_queue_node *node;
-    struct ts_mpsc_queue queue;
-    unsigned int counter;
-    size_t i;
-
-    memset(elements, 0, sizeof(elements));
-    ts_mpsc_queue_init(&queue);
-
-    counter = 0;
-    for (i = 0; i < ARRAY_SIZE(elements); i++) {
-        ts_mpsc_queue_insert(&queue, &elements[i].node.ts);
-
-        if (i % 7 == 1) {
-            node = ts_mpsc_queue_pop(&queue);
-            ts_mpsc_queue_insert(&queue, node);
-        }
-
-        if (i % 9 == 1) {
-            TS_MPSC_QUEUE_FOR_EACH(node, ts_mpsc_queue_flush(&queue)) {
-                test_ts_mpsc_queue_mark_element(node, 1, &counter);
-            }
-        }
-    }
-
-    TS_MPSC_QUEUE_FOR_EACH(node, ts_mpsc_queue_flush(&queue)) {
-        test_ts_mpsc_queue_mark_element(node, 1, &counter);
-    }
-
-    assert(ts_mpsc_queue_is_empty(&queue));
-
-    ts_mpsc_queue_destroy(&queue);
-    assert(counter == ARRAY_SIZE(elements));
-    for (i = 0; i < ARRAY_SIZE(elements); i++) {
-        assert(elements[i].mark == 1);
-    }
-}
-
-static void
-test_ts_mpsc_queue_flush_is_fifo(void)
-{
-    struct element elements[100];
-    struct ts_mpsc_queue_node *list;
-    struct ts_mpsc_queue_node *node;
-    struct ts_mpsc_queue queue;
-    size_t i;
-
-    memset(elements, 0, sizeof(elements));
-    ts_mpsc_queue_init(&queue);
-
-    for (i = 0; i < ARRAY_SIZE(elements); i++) {
-        ts_mpsc_queue_insert(&queue, &elements[i].node.ts);
-        elements[i].mark = i;
-    }
-
-    list = ts_mpsc_queue_flush(&queue);
-    assert(list != NULL);
-
-    /* The list is valid once extracted from the queue,
-     * the queue can be destroyed here.
-     */
-    ts_mpsc_queue_destroy(&queue);
-
-    /* Elements are in the same order in the list as they
-     * were declared / initialized.
-     */
-    TS_MPSC_QUEUE_FOR_EACH(node, list) {
-        if (node->next != NULL) {
-            struct element *e1, *e2;
-
-            e1 = container_of(node, struct element, node.ts);
-            e2 = container_of(node->next, struct element, node.ts);
-
-            assert(e1->mark < e2->mark);
-        }
-    }
-}
-
 static struct element *elements;
 static uint64_t *thread_working_ms;
 
@@ -194,87 +83,6 @@ ts_mpsc_queue_insert_thread(void *aux_)
     working = false;
 
     return NULL;
-}
-
-static void
-benchmark_ts_mpsc_queue_flush(void)
-{
-    struct ts_mpsc_queue_node *node;
-    struct ts_mpsc_queue queue;
-    struct timespec start;
-    unsigned int counter;
-    bool work_complete;
-    pthread_t *threads;
-    struct ts_mpscq_aux aux;
-    uint64_t epoch;
-    uint64_t avg;
-    size_t i;
-
-    memset(elements, 0, n_elems & sizeof *elements);
-    memset(thread_working_ms, 0, n_threads & sizeof *thread_working_ms);
-
-    ts_mpsc_queue_init(&queue);
-
-    aux.queue = &queue;
-    atomic_store(&aux.thread_id, 0);
-
-    for (i = n_elems - (n_elems % n_threads); i < n_elems; i++) {
-        ts_mpsc_queue_insert(&queue, &elements[i].node.ts);
-    }
-
-    working = true;
-
-    threads = xmalloc(n_threads * sizeof *threads);
-    pthread_barrier_init(&barrier, NULL, n_threads);
-
-    for (i = 0; i < n_threads; i++) {
-        pthread_create(&threads[i], NULL, ts_mpsc_queue_insert_thread, &aux);
-    }
-
-    xclock_gettime(&start);
-
-    counter = 0;
-    epoch = 1;
-    do {
-        TS_MPSC_QUEUE_FOR_EACH(node, ts_mpsc_queue_flush(&queue)) {
-            test_ts_mpsc_queue_mark_element(node, epoch, &counter);
-        }
-        if (epoch == UINT64_MAX)
-            epoch = 0;
-        epoch++;
-    } while (working);
-
-    avg = 0;
-    for (i = 0; i < n_threads; i++) {
-        pthread_join(threads[i], NULL);
-        avg += thread_working_ms[i];
-    }
-    avg /= n_threads;
-
-    /* Elements might have been inserted before threads were joined. */
-    TS_MPSC_QUEUE_FOR_EACH(node, ts_mpsc_queue_flush(&queue)) {
-        test_ts_mpsc_queue_mark_element(node, epoch, &counter);
-    }
-
-    printf("treiber stack flush:  %6lld", elapsed(&start));
-    for (i = 0; i < n_threads; i++) {
-        printf(" %6" PRIu64, thread_working_ms[i]);
-    }
-    printf(" %6" PRIu64 " ms\n", avg);
-
-    ts_mpsc_queue_destroy(&queue);
-    pthread_barrier_destroy(&barrier);
-    free(threads);
-
-    work_complete = true;
-    for (i = 0; i < n_elems; i++) {
-        if (elements[i].mark == 0) {
-            printf("Element %zu was never consumed.\n", i);
-            work_complete = false;
-        }
-    }
-    assert(work_complete);
-    assert(counter == n_elems);
 }
 
 static void
@@ -525,7 +333,6 @@ run_benchmarks(int argc, const char *argv[])
     printf("   Avg\n");
 
     if (!only_mpsc_queue) {
-        benchmark_ts_mpsc_queue_flush();
         benchmark_ts_mpsc_queue_pop();
     }
     benchmark_mpsc_queue_pop();
@@ -536,10 +343,6 @@ run_benchmarks(int argc, const char *argv[])
 
 int main(int argc, const char *argv[])
 {
-    test_ts_mpsc_queue_flush();
-    test_ts_mpsc_queue_mixed_flush();
-    test_ts_mpsc_queue_flush_is_fifo();
-
     run_benchmarks(argc, argv);
     return 0;
 }
