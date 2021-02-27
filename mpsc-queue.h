@@ -21,6 +21,7 @@ struct mpsc_queue {
 /* Return true if queue is acquired for reading. */
 static inline
 bool mpsc_queue_acquire(struct mpsc_queue *queue);
+
 /* Unlock the queue. */
 static inline
 void mpsc_queue_release(struct mpsc_queue *queue);
@@ -58,7 +59,9 @@ mpsc_queue_pop(struct mpsc_queue *queue);
 static inline
 void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node);
 
+/*******************/
 /* Implementation. */
+/*******************/
 
 /* Consumer API. */
 
