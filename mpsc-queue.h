@@ -1,6 +1,7 @@
 #ifndef MPSC_QUEUE_H
 #define MPSC_QUEUE_H
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdatomic.h>
 
@@ -12,9 +13,15 @@ struct mpsc_queue {
     _Atomic(struct mpsc_queue_node *) head;
     _Atomic(struct mpsc_queue_node *) tail;
     struct mpsc_queue_node stub;
+    atomic_flag read_locked;
 };
 
 /* Consumer API. */
+
+/* Return true if queue is acquired for reading. */
+static inline bool mpsc_queue_acquire(struct mpsc_queue *queue);
+/* Unlock the queue. */
+static inline void mpsc_queue_release(struct mpsc_queue *queue);
 
 enum mpsc_queue_poll_result {
     MPSC_QUEUE_EMPTY,
@@ -46,12 +53,27 @@ static inline void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue
 
 /* Consumer API. */
 
+/* Return true if queue is acquired for reading. */
+static inline bool
+mpsc_queue_acquire(struct mpsc_queue *queue)
+{
+    return atomic_flag_test_and_set(&queue->read_locked) == false;
+}
+
+/* Unlock the queue. */
+static inline void
+mpsc_queue_release(struct mpsc_queue *queue)
+{
+    atomic_flag_clear(&queue->read_locked);
+}
+
 void
 mpsc_queue_init(struct mpsc_queue *queue)
 {
     atomic_store_explicit(&queue->head, &queue->stub, memory_order_relaxed);
     atomic_store_explicit(&queue->tail, &queue->stub, memory_order_relaxed);
     atomic_store_explicit(&queue->stub.next, NULL, memory_order_relaxed);
+    atomic_flag_clear(&queue->read_locked);
 }
 
 enum mpsc_queue_poll_result
