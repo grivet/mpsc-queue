@@ -34,6 +34,10 @@ enum mpsc_queue_poll_result {
 static inline
 void mpsc_queue_init(struct mpsc_queue *queue);
 
+/* Insert at the back of the queue. Only the consumer can do it. */
+static inline
+void mpsc_queue_push_back(struct mpsc_queue *queue, struct mpsc_queue_node *node);
+
 static inline
 enum mpsc_queue_poll_result
 mpsc_queue_poll(struct mpsc_queue *queue, struct mpsc_queue_node **node);
@@ -79,6 +83,16 @@ mpsc_queue_init(struct mpsc_queue *queue)
     atomic_store_explicit(&queue->tail, &queue->stub, memory_order_relaxed);
     atomic_store_explicit(&queue->stub.next, NULL, memory_order_relaxed);
     atomic_flag_clear(&queue->read_locked);
+}
+
+static inline
+void mpsc_queue_push_back(struct mpsc_queue *queue, struct mpsc_queue_node *node)
+{
+    struct mpsc_queue_node *tail;
+
+    tail = atomic_load_explicit(&queue->tail, memory_order_relaxed);
+    atomic_store_explicit(&node->next, tail, memory_order_relaxed);
+    atomic_store_explicit(&queue->tail, node, memory_order_relaxed);
 }
 
 static inline enum mpsc_queue_poll_result
