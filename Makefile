@@ -4,7 +4,7 @@ perf_OBJS := test/perf/ts-mpsc-queue.o
 perf_OBJS += test/perf/perf.o
 perf_OBJS += test/util.o
 
-CFLAGS := -pthread -std=c11 -MD -Wall -Wextra $(CFLAGS)
+CFLAGS := -pthread -std=c11 -MD -Wall -Wextra $(EXTRA_CFLAGS)
 CFLAGS += -I$(CURDIR) -I$(CURDIR)/test
 
 test/%.o: test/%.c Makefile
