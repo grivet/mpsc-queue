@@ -19,9 +19,11 @@ struct mpsc_queue {
 /* Consumer API. */
 
 /* Return true if queue is acquired for reading. */
-static inline bool mpsc_queue_acquire(struct mpsc_queue *queue);
+static inline
+bool mpsc_queue_acquire(struct mpsc_queue *queue);
 /* Unlock the queue. */
-static inline void mpsc_queue_release(struct mpsc_queue *queue);
+static inline
+void mpsc_queue_release(struct mpsc_queue *queue);
 
 enum mpsc_queue_poll_result {
     MPSC_QUEUE_EMPTY,
@@ -29,9 +31,11 @@ enum mpsc_queue_poll_result {
     MPSC_QUEUE_RETRY,
 };
 
-static inline void mpsc_queue_init(struct mpsc_queue *queue);
+static inline
+void mpsc_queue_init(struct mpsc_queue *queue);
 
-static inline enum mpsc_queue_poll_result
+static inline
+enum mpsc_queue_poll_result
 mpsc_queue_poll(struct mpsc_queue *queue, struct mpsc_queue_node **node);
 
 static inline
@@ -47,7 +51,8 @@ mpsc_queue_pop(struct mpsc_queue *queue);
 
 /* Producer API. */
 
-static inline void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node);
+static inline
+void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node);
 
 /* Implementation. */
 
