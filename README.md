@@ -21,8 +21,9 @@ This is a single-header library, to be dropped and used in your project.
 
 - Wait-free writes: writers will never wait for queue state sync when enqueuing.
 
-- Lock-free reads: the reader might wait for the queue state to become consistent,
-  but will not take locks doing so.
+- Wait-free peeks: The reader does not wait to see is a node is available in the queue.
+  Peeking takes a bounded number of instructions. There is however no removal
+  forward-guarantee, as it relies on other threads progressing.
 
 - Intrusive: Queue elements are allocated as part of larger objects.
   Objects are retrieved by offset manipulation.
