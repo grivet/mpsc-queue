@@ -72,7 +72,7 @@ mpsc_queue_release(struct mpsc_queue *queue)
     atomic_flag_clear(&queue->read_locked);
 }
 
-void
+static inline void
 mpsc_queue_init(struct mpsc_queue *queue)
 {
     atomic_store_explicit(&queue->head, &queue->stub, memory_order_relaxed);
@@ -81,7 +81,7 @@ mpsc_queue_init(struct mpsc_queue *queue)
     atomic_flag_clear(&queue->read_locked);
 }
 
-enum mpsc_queue_poll_result
+static inline enum mpsc_queue_poll_result
 mpsc_queue_poll(struct mpsc_queue *queue, struct mpsc_queue_node **node)
 {
     struct mpsc_queue_node *tail;
