@@ -19,7 +19,7 @@ This is a single-header library, to be dropped and used in your project.
 
 - Unbounded: The queue is a linked-list and does not limit the number of elements.
 
-- Wait-free writes: writers will never wait for queue state sync when enqueuing.
+- Wait-free writes: Writers will never wait for queue state sync when enqueuing.
 
 - Wait-free peeks: The reader does not wait to see is a node is available in the queue.
   Peeking takes a bounded number of instructions. There is however no removal
