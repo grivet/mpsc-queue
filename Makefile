@@ -1,40 +1,24 @@
-# GNU Make
+all: run
 
-AR_LIB = lib/libmpsc.a
-SO_LIB = lib/libmpsc.so
+perf_OBJS := test/perf/ts-mpsc-queue.o
+perf_OBJS += test/perf/perf.o
+perf_OBJS += test/util.o
 
-OBJS := src/mpsc-queue.o
+CFLAGS := -pthread -std=c11 -MD -Wall -Wextra $(CFLAGS)
+CFLAGS += -I$(CURDIR) -I$(CURDIR)/test
 
-CFLAGS := -std=c11 -MD -Wall -Wextra -Werror $(CFLAGS)
-
-all: $(AR_LIB) $(SO_LIB)
-
-$(SO_LIB): $(OBJS)
-	@mkdir -p lib
-	$(CC) -shared $(CFLAGS) $^ -o $@ $(LDLIBS)
-
-$(AR_LIB): $(OBJS)
-	@mkdir -p lib
-	$(AR) -crs $@ $^
-
-src/%.o: src/%.c Makefile
+test/%.o: test/%.c Makefile
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-test_OBJS := $(OBJS)
-test_OBJS += src/ts-mpsc-queue.o
-test_OBJS += src/util.o
-test_OBJS += src/test.o
-
-test: $(test_OBJS) $(AR_LIB)
-	$(CC) -pthread -std=c11 -MD -Wall -Wextra $(CFLAGS) -o $@ $^
+perf: $(perf_OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 .PHONY: run
-run: test
-	$(WRAPPER) $(CURDIR)/test -n 1000000 -c 2
+run: perf
+	$(WRAPPER) $(CURDIR)/perf -n 10000000 -c $$(nproc)
 
--include src/*.d
+-include test/perf/*.d
 
 .PHONY: clean
 clean:
-	rm -f $(AR_LIB) $(SO_LIB) $(test_OBJS) $(test_OBJS:%.o=%.d) test
-	rm -rf lib
+	rm -f $(perf_OBJS) $(perf_OBJS:%.o=%.d) perf

@@ -1,4 +1,3 @@
-lib/*
 *.d
 *.o
-test
+perf

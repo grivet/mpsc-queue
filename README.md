@@ -2,6 +2,14 @@
 
 A simple C11 implementation of Vyukov multi-producer, single-consumer lockless queue[1].
 
+## Build & Use
+
+```shell
+make # Build example app and run
+```
+
+This is a single-header library, to be dropped and used in your project.
+
 ## Properties
 
 - Multi-producer: multiple threads can write concurrently.
@@ -38,14 +46,6 @@ This has important implication regarding the concurrency environment this queue 
 be used with. **One must ensure that producer threads cannot be cancelled when
 inserting elements in the queue. Either cooperative threads should be used or insertions
 should be done outside cancellable sections.**
-
-## Compilation
-
-```shell
-make      # Build the lib
-make test # Build the test app
-make run  # Run the test app
-```
 
 ## Benchmark
 
