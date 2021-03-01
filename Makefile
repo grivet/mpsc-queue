@@ -1,4 +1,4 @@
-all: run
+all: unit perf
 
 CFLAGS := -pthread -std=c11 -MD -Wall -Wextra $(EXTRA_CFLAGS)
 CFLAGS += -I$(CURDIR) -I$(CURDIR)/test
