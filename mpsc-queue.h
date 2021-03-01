@@ -47,8 +47,12 @@ static inline
 struct mpsc_queue_node *
 mpsc_queue_pop(struct mpsc_queue *queue);
 
+static inline
+struct mpsc_queue_node *
+mpsc_queue_tail(struct mpsc_queue *queue);
+
 #define MPSC_QUEUE_FOR_EACH(node, queue) \
-    for (node = _mpsc_queue_tail(queue); node != NULL; \
+    for (node = mpsc_queue_tail(queue); node != NULL; \
          node = atomic_load_explicit(&node->next, memory_order_acquire))
 
 #define MPSC_QUEUE_FOR_EACH_POP(node, queue) \
@@ -158,22 +162,8 @@ mpsc_queue_pop(struct mpsc_queue *queue)
     return node;
 }
 
-/* Producer API. */
-
-static inline void
-mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node)
-{
-    struct mpsc_queue_node *prev;
-
-    atomic_store_explicit(&node->next, NULL, memory_order_relaxed);
-    prev = atomic_exchange_explicit(&queue->head, node, memory_order_acq_rel);
-    atomic_store_explicit(&prev->next, node, memory_order_release);
-}
-
-/* helpers. */
-
 static inline struct mpsc_queue_node *
-_mpsc_queue_tail(struct mpsc_queue *queue)
+mpsc_queue_tail(struct mpsc_queue *queue)
 {
     struct mpsc_queue_node *tail;
     struct mpsc_queue_node *next;
@@ -191,6 +181,18 @@ _mpsc_queue_tail(struct mpsc_queue *queue)
     }
 
     return tail;
+}
+
+/* Producer API. */
+
+static inline void
+mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node)
+{
+    struct mpsc_queue_node *prev;
+
+    atomic_store_explicit(&node->next, NULL, memory_order_relaxed);
+    prev = atomic_exchange_explicit(&queue->head, node, memory_order_acq_rel);
+    atomic_store_explicit(&prev->next, node, memory_order_release);
 }
 
 #endif /* MPSC_QUEUE_H */
