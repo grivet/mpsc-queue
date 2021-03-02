@@ -55,14 +55,14 @@ TAILQ_HEAD(element_tailq, element);
 
 struct tailq_aux {
     struct element_tailq *queue;
-    pthread_mutex_t lock;
+    pthread_spinlock_t lock;
     _Atomic(unsigned int) thread_id;
 };
 
-#define tailq_lock_init(l) do { pthread_mutex_init(l, NULL); } while (0)
-#define tailq_lock_destroy(l) do { pthread_mutex_destroy(l); } while (0)
-#define tailq_lock(l) do { pthread_mutex_lock(l); } while (0)
-#define tailq_unlock(l) do { pthread_mutex_unlock(l); } while (0)
+#define tailq_lock_init(l) do { pthread_spin_init(l, PTHREAD_PROCESS_PRIVATE); } while (0)
+#define tailq_lock_destroy(l) do { pthread_spin_destroy(l); } while (0)
+#define tailq_lock(l) do { pthread_spin_lock(l); } while (0)
+#define tailq_unlock(l) do { pthread_spin_unlock(l); } while (0)
 
 static void *
 tailq_insert_thread(void *aux_)
