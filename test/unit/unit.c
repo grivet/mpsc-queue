@@ -23,7 +23,7 @@ mq_create(void)
 static void
 mq_destroy(struct mpsc_queue *q)
 {
-    assert(mpsc_queue_acquire(q));
+    assert(mpsc_queue_try_lock(q));
     free(q);
 }
 
@@ -40,7 +40,7 @@ test_mpsc_queue_insert_ordered(void)
         mpsc_queue_insert(q, &elements[i].node);
     }
 
-    assert(mpsc_queue_acquire(q));
+    assert(mpsc_queue_try_lock(q));
 
     i = 0;
     MPSC_QUEUE_FOR_EACH (node, q) {
@@ -55,7 +55,7 @@ test_mpsc_queue_insert_ordered(void)
         assert(e->id == (unsigned int)(e - elements));
     }
 
-    mpsc_queue_release(q);
+    mpsc_queue_unlock(q);
     mq_destroy(q);
 }
 
@@ -94,7 +94,7 @@ test_mpsc_queue_insert_partial(void)
         }
     }
 
-    assert(mpsc_queue_acquire(q));
+    assert(mpsc_queue_try_lock(q));
 
     /* Verify that when the chain is broken, iterators will stop. */
     i = 0;
@@ -124,7 +124,7 @@ test_mpsc_queue_insert_partial(void)
         assert(e->id == (unsigned int)(e - elements));
     }
 
-    mpsc_queue_release(q);
+    mpsc_queue_unlock(q);
     mq_destroy(q);
 }
 
@@ -136,7 +136,7 @@ test_mpsc_queue_push_back(void)
     struct element elements[10];
     size_t i;
 
-    assert(mpsc_queue_acquire(q));
+    assert(mpsc_queue_try_lock(q));
 
     assert(mpsc_queue_pop(q) == NULL);
     mpsc_queue_push_back(q, &elements[0].node);
@@ -181,7 +181,7 @@ test_mpsc_queue_push_back(void)
         assert(e->id == (unsigned int)(e - elements));
     }
 
-    mpsc_queue_release(q);
+    mpsc_queue_unlock(q);
     mq_destroy(q);
 }
 

@@ -18,13 +18,17 @@ struct mpsc_queue {
 
 /* Consumer API. */
 
-/* Return true if queue is acquired for reading. */
+/* Lock the queue for consume operations. */
 static inline
-bool mpsc_queue_acquire(struct mpsc_queue *queue);
+void mpsc_queue_lock(struct mpsc_queue *queue);
+
+/* Return true if queue is acquired for consuming. */
+static inline
+bool mpsc_queue_try_lock(struct mpsc_queue *queue);
 
 /* Unlock the queue. */
 static inline
-void mpsc_queue_release(struct mpsc_queue *queue);
+void mpsc_queue_unlock(struct mpsc_queue *queue);
 
 enum mpsc_queue_poll_result {
     MPSC_QUEUE_EMPTY,
@@ -69,16 +73,22 @@ void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node);
 
 /* Consumer API. */
 
+static inline void
+mpsc_queue_lock(struct mpsc_queue *queue)
+{
+    while (!mpsc_queue_try_lock(queue));
+}
+
 /* Return true if queue is acquired for reading. */
 static inline bool
-mpsc_queue_acquire(struct mpsc_queue *queue)
+mpsc_queue_try_lock(struct mpsc_queue *queue)
 {
     return atomic_flag_test_and_set(&queue->read_locked) == false;
 }
 
 /* Unlock the queue. */
 static inline void
-mpsc_queue_release(struct mpsc_queue *queue)
+mpsc_queue_unlock(struct mpsc_queue *queue)
 {
     atomic_flag_clear(&queue->read_locked);
 }
