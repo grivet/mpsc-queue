@@ -22,9 +22,10 @@ This is a single-header library, to be dropped and used in your project.
 
 - Wait-free writes: Writers will never wait for queue state sync when enqueuing.
 
-- Wait-free peeks: The reader does not wait to see is a node is available in the queue.
-  Peeking takes a bounded number of instructions. There is however no removal
-  forward-guarantee, as it relies on other threads progressing.
+- Obstruction-free reads: The reader does not wait to see is a node is available
+  in the queue. Peeking takes a bounded number of instructions. There is however
+  no removal forward-guarantee, as it relies on other threads progressing. Livelock
+  must be avoided with an out-of-band mechanism.
 
 - Intrusive: Queue elements are allocated as part of larger objects.
   Objects are retrieved by offset manipulation.
@@ -45,9 +46,9 @@ However, because one insertion consists in two separate memory transaction, the 
 state can be found inconsistent *within* the series.
 
 This has important implication regarding the concurrency environment this queue can
-be used with. **One must ensure that producer threads cannot be cancelled when
-inserting elements in the queue. Either cooperative threads should be used or insertions
-should be done outside cancellable sections.**
+be used with. To avoid livelocking the consumer thread, one must ensure that producer
+threads cannot be cancelled when inserting elements in the queue. Either cooperative
+threads should be used or insertions should be done outside cancellable sections.
 
 ## Benchmark
 
