@@ -129,7 +129,7 @@ test_mpsc_queue_insert_partial(void)
 }
 
 static void
-test_mpsc_queue_push_back(void)
+test_mpsc_queue_push_front(void)
 {
     struct mpsc_queue *q = mq_create();
     struct mpsc_queue_node *node;
@@ -139,19 +139,19 @@ test_mpsc_queue_push_back(void)
     assert(mpsc_queue_try_lock(q));
 
     assert(mpsc_queue_pop(q) == NULL);
-    mpsc_queue_push_back(q, &elements[0].node);
+    mpsc_queue_push_front(q, &elements[0].node);
     node = mpsc_queue_pop(q);
     assert(node == &elements[0].node);
     assert(mpsc_queue_pop(q) == NULL);
 
-    mpsc_queue_push_back(q, &elements[0].node);
-    mpsc_queue_push_back(q, &elements[1].node);
+    mpsc_queue_push_front(q, &elements[0].node);
+    mpsc_queue_push_front(q, &elements[1].node);
     assert(mpsc_queue_pop(q) == &elements[1].node);
     assert(mpsc_queue_pop(q) == &elements[0].node);
     assert(mpsc_queue_pop(q) == NULL);
 
-    mpsc_queue_push_back(q, &elements[1].node);
-    mpsc_queue_push_back(q, &elements[0].node);
+    mpsc_queue_push_front(q, &elements[1].node);
+    mpsc_queue_push_front(q, &elements[0].node);
     mpsc_queue_insert(q, &elements[2].node);
     assert(mpsc_queue_pop(q) == &elements[0].node);
     assert(mpsc_queue_pop(q) == &elements[1].node);
@@ -164,9 +164,9 @@ test_mpsc_queue_push_back(void)
     }
 
     node = mpsc_queue_pop(q);
-    mpsc_queue_push_back(q, node);
+    mpsc_queue_push_front(q, node);
     assert(mpsc_queue_pop(q) == node);
-    mpsc_queue_push_back(q, node);
+    mpsc_queue_push_front(q, node);
 
     i = 0;
     MPSC_QUEUE_FOR_EACH (node, q) {
@@ -192,6 +192,6 @@ int main(int argc, const char *argv[])
 
     test_mpsc_queue_insert_ordered();
     test_mpsc_queue_insert_partial();
-    test_mpsc_queue_push_back();
+    test_mpsc_queue_push_front();
     return 0;
 }

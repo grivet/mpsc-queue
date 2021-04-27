@@ -39,9 +39,9 @@ enum mpsc_queue_poll_result {
 static inline
 void mpsc_queue_init(struct mpsc_queue *queue);
 
-/* Insert at the back of the queue. Only the consumer can do it. */
+/* Insert at the front of the queue. Only the consumer can do it. */
 static inline
-void mpsc_queue_push_back(struct mpsc_queue *queue, struct mpsc_queue_node *node);
+void mpsc_queue_push_front(struct mpsc_queue *queue, struct mpsc_queue_node *node);
 
 static inline
 enum mpsc_queue_poll_result
@@ -103,7 +103,7 @@ mpsc_queue_init(struct mpsc_queue *queue)
 }
 
 static inline
-void mpsc_queue_push_back(struct mpsc_queue *queue, struct mpsc_queue_node *node)
+void mpsc_queue_push_front(struct mpsc_queue *queue, struct mpsc_queue_node *node)
 {
     struct mpsc_queue_node *tail;
 
