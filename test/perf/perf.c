@@ -134,15 +134,18 @@ benchmark_tailq(void)
     counter = 0;
     epoch = 1;
     do {
-        struct element *elem;
+        struct element *elem = NULL;
 
         tailq_lock(&aux.lock);
         if (!TAILQ_EMPTY(&tailq)) {
             elem = TAILQ_FIRST(&tailq);
             TAILQ_REMOVE(&tailq, elem, node.tailq);
-            test_tailq_mark_element(elem, epoch, &counter);
         }
         tailq_unlock(&aux.lock);
+
+        if (elem != NULL)
+            test_tailq_mark_element(elem, epoch, &counter);
+
         if (epoch == UINT64_MAX)
             epoch = 0;
         epoch++;
