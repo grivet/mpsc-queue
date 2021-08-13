@@ -22,7 +22,7 @@ This is a single-header library, to be dropped and used in your project.
 
 - Wait-free writes: Writers will never wait for queue state sync when enqueuing.
 
-- Obstruction-free reads: The reader does not wait to see is a node is available
+- Obstruction-free reads: The reader does not wait to see if a node is available
   in the queue. Peeking takes a bounded number of instructions. There is however
   no removal forward-guarantee, as it relies on other threads progressing. Livelock
   must be avoided with an out-of-band mechanism.
