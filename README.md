@@ -5,8 +5,9 @@ A simple C11 implementation of Vyukov multi-producer, single-consumer lockless q
 ## Build & Use
 
 ```shell
-make     # Build tests
-make run # Run tests
+make           # Build tests
+make run       # Run tests
+make benchmark # Run benchmark
 ```
 
 This is a single-header library, to be dropped and used in your project.

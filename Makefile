@@ -24,6 +24,12 @@ run: unit perf
 	$(WRAPPER) $(CURDIR)/unit \
 	&& $(WRAPPER) $(CURDIR)/perf -n 1000000 -c $$(($$(nproc) - 1))
 
+.PHONY: benchmark
+benchmark: perf
+	$(CURDIR)/test/perf/stats.sh $(CURDIR)/perf 1000000 1
+	$(CURDIR)/test/perf/stats.sh $(CURDIR)/perf 1000000 2
+	$(CURDIR)/test/perf/stats.sh $(CURDIR)/perf 1000000 4
+
 -include test/perf/*.d
 -include test/unit/*.d
 
