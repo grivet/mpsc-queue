@@ -165,7 +165,7 @@ benchmark_tailq(void)
         test_tailq_mark_element(elem, epoch, &counter);
     }
 
-    printf("          tailq pop:  %6lld", elapsed(&start));
+    printf("          tailq:  %6lld", elapsed(&start));
     for (i = 0; i < n_threads; i++) {
         printf(" %6" PRIu64, thread_working_ms[i]);
     }
@@ -292,7 +292,7 @@ benchmark_ts_mpsc_queue_pop(void)
         test_ts_mpsc_queue_mark_element(node, epoch, &counter);
     }
 
-    printf("  treiber stack pop:  %6lld", elapsed(&start));
+    printf("  treiber stack:  %6lld", elapsed(&start));
     for (i = 0; i < n_threads; i++) {
         printf(" %6" PRIu64, thread_working_ms[i]);
     }
@@ -426,7 +426,7 @@ benchmark_mpsc_queue_pop(void)
         test_mpsc_queue_mark_element(node, epoch, &counter);
     }
 
-    printf("     mpsc-queue pop:  %6lld", elapsed(&start));
+    printf("     mpsc-queue:  %6lld", elapsed(&start));
     for (i = 0; i < n_threads; i++) {
         printf(" %6" PRIu64, thread_working_ms[i]);
     }
@@ -473,7 +473,7 @@ run_benchmarks(int argc, const char *argv[])
 
     printf("Benchmarking n=%u on 1 + %u threads.\n", n_elems, n_threads);
 
-    printf("        type\\thread:  Reader ");
+    printf("    type\\thread:  Reader ");
     for (i = 0; i < n_threads; i++) {
         printf("   %3zu ", i + 1);
     }
