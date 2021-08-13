@@ -22,7 +22,7 @@ perf: $(perf_OBJS)
 .PHONY: run
 run: unit perf
 	$(WRAPPER) $(CURDIR)/unit \
-	&& $(WRAPPER) $(CURDIR)/perf -n 10000000 -c $$(($$(nproc) - 1))
+	&& $(WRAPPER) $(CURDIR)/perf -n 1000000 -c $$(($$(nproc) - 1))
 
 -include test/perf/*.d
 -include test/unit/*.d
