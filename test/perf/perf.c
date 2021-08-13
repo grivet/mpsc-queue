@@ -379,10 +379,6 @@ benchmark_mpsc_queue_pop(void)
 
     mpsc_queue_init(&queue);
 
-    if (!mpsc_queue_try_lock(&queue)) {
-        abort();
-    }
-
     aux.queue = &queue;
     atomic_store(&aux.thread_id, 0);
 
@@ -436,7 +432,6 @@ benchmark_mpsc_queue_pop(void)
     }
     printf(" %6" PRIu64 " ms\n", avg);
 
-    mpsc_queue_unlock(&queue);
     pthread_barrier_destroy(&barrier);
     free(threads);
 

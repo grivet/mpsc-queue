@@ -13,22 +13,9 @@ struct mpsc_queue {
     _Atomic(struct mpsc_queue_node *) head;
     _Atomic(struct mpsc_queue_node *) tail;
     struct mpsc_queue_node stub;
-    atomic_flag read_locked;
 };
 
 /* Consumer API. */
-
-/* Lock the queue for consume operations. */
-static inline
-void mpsc_queue_lock(struct mpsc_queue *queue);
-
-/* Return true if queue is acquired for consuming. */
-static inline
-bool mpsc_queue_try_lock(struct mpsc_queue *queue);
-
-/* Unlock the queue. */
-static inline
-void mpsc_queue_unlock(struct mpsc_queue *queue);
 
 enum mpsc_queue_poll_result {
     MPSC_QUEUE_EMPTY,
@@ -74,32 +61,11 @@ void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node);
 /* Consumer API. */
 
 static inline void
-mpsc_queue_lock(struct mpsc_queue *queue)
-{
-    while (!mpsc_queue_try_lock(queue));
-}
-
-/* Return true if queue is acquired for reading. */
-static inline bool
-mpsc_queue_try_lock(struct mpsc_queue *queue)
-{
-    return atomic_flag_test_and_set(&queue->read_locked) == false;
-}
-
-/* Unlock the queue. */
-static inline void
-mpsc_queue_unlock(struct mpsc_queue *queue)
-{
-    atomic_flag_clear(&queue->read_locked);
-}
-
-static inline void
 mpsc_queue_init(struct mpsc_queue *queue)
 {
     atomic_store_explicit(&queue->head, &queue->stub, memory_order_relaxed);
     atomic_store_explicit(&queue->tail, &queue->stub, memory_order_relaxed);
     atomic_store_explicit(&queue->stub.next, NULL, memory_order_relaxed);
-    atomic_flag_clear(&queue->read_locked);
 }
 
 static inline
