@@ -1,3 +1,7 @@
+/* SPDX-License-Identifier: BSD-3-Clause
+ * Copyright(c) 2021 Gaëtan Rivet
+ */
+
 #ifndef MPSC_QUEUE_H
 #define MPSC_QUEUE_H
 
