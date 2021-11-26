@@ -25,10 +25,25 @@ EOF
     exit 0;
 }
 
-[ ! "$BIN" ] && usage;
+case "$*" in
+    *-h*|*--help*|*-help*) usage;;
+esac
+
+[ "$BIN" ] || usage;
+
+BIN="$(readlink -e "$BIN")"
+[ "$BIN" ] || {
+    echo "Binary '$1' not found."
+    exit 1
+}
 
 CMD="$BIN -n $N_ELEM -c $N_CORE"
 CMD_fast="$BIN -n 1 -c 1"
+
+$CMD_fast 2>&1 > /dev/null || {
+    echo "Provided binary does not conform to the test parameters."
+    exit 1
+}
 
 xc() { python -c "import math; print(float($*))"; }
 join_by() {( IFS="$1"; shift; echo "$*"; )}
