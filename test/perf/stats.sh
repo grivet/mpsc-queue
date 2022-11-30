@@ -69,8 +69,8 @@ print_stats() {(
     sd=$(stdev $m $values)
     printf "%*s: avg %6.1f | stdev %6.1f | max %5.0f | min %5.0f\n" \
         "$len" "$name" "$m" "$sd" \
-        "$(xc "max($(join_by , $values))")" \
-        "$(xc "min($(join_by , $values))")"
+        "$(xc "max($(join_by , $values),0)")" \
+        "$(xc "min($(join_by , $values),0xffffffff)")"
 )}
 
 tmp=$(mktemp)
