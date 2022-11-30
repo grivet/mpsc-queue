@@ -17,7 +17,7 @@ perf_OBJS += test/util.o
 perf_OBJS += test/perf/ts-mpsc-queue.o
 
 perf: $(perf_OBJS)
-	$(CC) $(CFLAGS_ALL) -o $@ $^
+	$(CC) $(CFLAGS_ALL) -O3 -o $@ $^
 
 .PHONY: run
 run: unit perf
