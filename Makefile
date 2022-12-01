@@ -1,6 +1,6 @@
 all: unit perf
 
-CFLAGS_ALL := -pthread -std=c11 -MD -Wall -Wextra $(CFLAGS)
+CFLAGS_ALL := -std=c11 -MD -Wall -Wextra $(CFLAGS)
 CFLAGS_ALL += -I$(CURDIR) -I$(CURDIR)/test
 
 test/%.o: test/%.c Makefile
@@ -17,7 +17,7 @@ perf_OBJS += test/util.o
 perf_OBJS += test/perf/ts-mpsc-queue.o
 
 perf: $(perf_OBJS)
-	$(CC) $(CFLAGS_ALL) -O3 -o $@ $^
+	$(CC) $(CFLAGS_ALL) -pthread -O3 -o $@ $^
 
 .PHONY: run
 run: unit perf
