@@ -126,13 +126,28 @@ test_mpsc_queue_poll(void)
 {
     struct mpsc_queue *q = mq_create();
     struct mpsc_queue_node *node;
-    struct element elements[1];
+    struct element elements[2];
     struct mpsc_queue_node *prevs[ARRAY_SIZE(elements)];
     size_t i;
 
     for (i = 0; i < ARRAY_SIZE(elements); i++) {
         elements[i].id = i;
     }
+
+    /* Basic cases. */
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
+
+    mpsc_queue_insert(q, &elements[0].node);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
+
+    mpsc_queue_insert(q, &elements[0].node);
+    mpsc_queue_insert(q, &elements[1].node);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
+
+    /* Partial insertion cases. */
 
     prevs[0] = mpsc_queue_insert_begin(q, &elements[0].node);
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_RETRY);
