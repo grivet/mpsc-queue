@@ -175,11 +175,8 @@ test_mpsc_queue_push_front(void)
     mq_destroy(q);
 }
 
-int main(int argc, const char *argv[])
+int main(void)
 {
-    (void)argc;
-    (void)argv;
-
     test_mpsc_queue_insert_ordered();
     test_mpsc_queue_insert_partial();
     test_mpsc_queue_push_front();
