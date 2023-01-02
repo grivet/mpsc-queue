@@ -1,6 +1,6 @@
 all: unit perf
 
-CFLAGS_ALL := -std=c11 -MD -Wall -Wextra $(CFLAGS)
+CFLAGS_ALL := -std=c11 -MD -Wall -Wextra -g3 $(CFLAGS)
 CFLAGS_ALL += -I$(CURDIR) -I$(CURDIR)/test
 
 test/%.o: test/%.c Makefile
