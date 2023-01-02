@@ -126,7 +126,7 @@ test_mpsc_queue_poll(void)
 {
     struct mpsc_queue *q = mq_create();
     struct mpsc_queue_node *node;
-    struct element elements[2];
+    struct element elements[3];
     struct mpsc_queue_node *prevs[ARRAY_SIZE(elements)];
     size_t i;
 
@@ -135,6 +135,7 @@ test_mpsc_queue_poll(void)
     }
 
     /* Basic cases. */
+
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
 
     mpsc_queue_insert(q, &elements[0].node);
@@ -149,11 +150,30 @@ test_mpsc_queue_poll(void)
 
     /* Partial insertion cases. */
 
+    /* If a single element is currently being inserted,
+     * return value should be 'retry'. */
+
     prevs[0] = mpsc_queue_insert_begin(q, &elements[0].node);
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_RETRY);
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_RETRY);
 
     mpsc_queue_insert_end(prevs[0], &elements[0].node);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
+
+    /* Fully inserting n>1 nodes, then partially inserting
+     * a last node, should return 'retry' after removing what
+     * can be. */
+
+    mpsc_queue_insert(q, &elements[0].node);
+    mpsc_queue_insert(q, &elements[1].node);
+    prevs[2] = mpsc_queue_insert_begin(q, &elements[2].node);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_RETRY);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_RETRY);
+
+    mpsc_queue_insert_end(prevs[2], &elements[2].node);
+    assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
 
