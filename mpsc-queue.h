@@ -127,7 +127,7 @@ mpsc_queue_poll(struct mpsc_queue *queue, struct mpsc_queue_node **node)
         return MPSC_QUEUE_ITEM;
     }
 
-    return MPSC_QUEUE_EMPTY;
+    return MPSC_QUEUE_RETRY;
 }
 
 static inline
