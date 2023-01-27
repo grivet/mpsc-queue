@@ -1,6 +1,13 @@
 all: unit perf
 
-CFLAGS_ALL := -std=c11 -MD -Wall -Wextra -g3 $(CFLAGS)
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+CSTD := gnu11
+else
+CSTD := c11
+endif
+
+CFLAGS_ALL := -std=$(CSTD) -MD -Wall -Wextra -g3 $(CFLAGS)
 CFLAGS_ALL += -I$(CURDIR) -I$(CURDIR)/test
 
 test/%.o: test/%.c Makefile
@@ -15,14 +22,23 @@ unit: $(unit_OBJS)
 perf_OBJS := test/perf/perf.o
 perf_OBJS += test/util.o
 perf_OBJS += test/perf/ts-mpsc-queue.o
+ifeq ($(UNAME_S),Darwin)
+perf_OBJS += test/perf/pthread-barrier.o
+endif
 
 perf: $(perf_OBJS)
 	$(CC) $(CFLAGS_ALL) -pthread -O3 -o $@ $^
 
+ifeq ($(UNAME_S),Darwin)
+NPROC=$(shell sysctl -n hw.logicalcpu)
+else
+NPROC=$(shell nproc)
+endif
+
 .PHONY: run
 run: unit perf
 	$(WRAPPER) $(CURDIR)/unit \
-	&& $(WRAPPER) $(CURDIR)/perf -n 1000000 -c $$(($$(nproc) - 1))
+	&& $(WRAPPER) $(CURDIR)/perf -n 1000000 -c $$(($(NPROC) - 1))
 
 .PHONY: benchmark
 benchmark: perf

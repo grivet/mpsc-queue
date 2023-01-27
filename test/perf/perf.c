@@ -7,6 +7,12 @@
 #include <inttypes.h>
 
 #include <pthread.h>
+#if !defined _POSIX_BARRIERS
+#include "pthread-barrier.h"
+#endif
+#if __APPLE__
+#define USE_FAIR_LOCK
+#endif
 
 #include <sys/queue.h>
 
@@ -53,16 +59,25 @@ test_tailq_mark_element(struct element *elem,
 
 TAILQ_HEAD(element_tailq, element);
 
-struct tailq_aux {
-    struct element_tailq *queue;
-    pthread_spinlock_t lock;
-    _Atomic(unsigned int) thread_id;
-};
-
+#ifndef USE_FAIR_LOCK
+#define tailq_lock_type pthread_spinlock_t
 #define tailq_lock_init(l) do { pthread_spin_init(l, PTHREAD_PROCESS_PRIVATE); } while (0)
 #define tailq_lock_destroy(l) do { pthread_spin_destroy(l); } while (0)
 #define tailq_lock(l) do { pthread_spin_lock(l); } while (0)
 #define tailq_unlock(l) do { pthread_spin_unlock(l); } while (0)
+#else
+#define tailq_lock_type pthread_mutex_t
+#define tailq_lock_init(l) do { pthread_mutex_init(l, NULL); } while (0)
+#define tailq_lock_destroy(l) do { pthread_mutex_destroy(l); } while (0)
+#define tailq_lock(l) do { pthread_mutex_lock(l); } while (0)
+#define tailq_unlock(l) do { pthread_mutex_unlock(l); } while (0)
+#endif
+
+struct tailq_aux {
+    struct element_tailq *queue;
+    tailq_lock_type lock;
+    _Atomic(unsigned int) thread_id;
+};
 
 static void *
 tailq_insert_thread(void *aux_)
@@ -100,10 +115,10 @@ benchmark_tailq(void)
 {
     struct element_tailq tailq =
         TAILQ_HEAD_INITIALIZER(tailq);
+    unsigned int n_incomplete;
     struct timespec start;
     struct tailq_aux aux;
     unsigned int counter;
-    bool work_complete;
     pthread_t *threads;
     uint64_t epoch;
     uint64_t avg;
@@ -175,14 +190,14 @@ benchmark_tailq(void)
     pthread_barrier_destroy(&barrier);
     free(threads);
 
-    work_complete = true;
+    n_incomplete = 0;
     for (i = 0; i < n_elems; i++) {
         if (elements[i].mark == 0) {
-            printf("Element %zu was never consumed.\n", i);
-            work_complete = false;
+            //printf("Element %zu was never consumed.\n", i);
+            n_incomplete++;
         }
     }
-    assert(work_complete);
+    assert(n_incomplete == 0);
     assert(counter == n_elems);
 }
 

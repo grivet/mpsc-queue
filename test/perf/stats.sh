@@ -31,7 +31,7 @@ esac
 
 [ "$BIN" ] || usage;
 
-BIN="$(readlink -e "$BIN")"
+BIN="$(readlink -f "$BIN")"
 [ "$BIN" ] || {
     echo "Binary '$1' not found."
     exit 1
@@ -45,7 +45,7 @@ $CMD_fast 2>&1 > /dev/null || {
     exit 1
 }
 
-xc() { python -c "import math; print(float($*))"; }
+xc() { python3 -c "import math; print(float($*))"; }
 join_by() {( IFS="$1"; shift; echo "$*"; )}
 
 stdev() {(
@@ -78,7 +78,6 @@ $CMD_fast | grep -v 'Benchmarking\|Reader' | \
 while read line; do
     name="$(echo $line | cut -d: -f1)"
     printf "%s reader\t%s writers\t" "$name" "$name"
-    #printf "%s writers\t" "$name"
 done >> $tmp
 printf "\n" >> $tmp
 
@@ -90,7 +89,6 @@ while read line; do
     reader="$(echo $line  | cut -d: -f2- | cut -d' ' -f2)"
     writers="$(echo $line | cut -d: -f2- | rev | cut -d' ' -f2 | rev)"
     printf "%d\t%d\t" $reader $writers
-    #printf "%d\t" $writers
 done >> $tmp
 printf "\n" >> $tmp
 done
@@ -101,7 +99,7 @@ nb_col=$(awk -F$'\t' '{print NF-1}' $tmp | head -1)
 maxlen=0
 for i in $(seq 1 $nb_col); do
     name=$(head -1 $tmp | cut -d$'\t' -f$i)
-    len=$(printf "%s" "$name" |wc -m)
+    len=$(expr $(printf "%s" "$name" |wc -m))
     [ "$maxlen" -lt "$len" ] && maxlen=$len
 done
 
