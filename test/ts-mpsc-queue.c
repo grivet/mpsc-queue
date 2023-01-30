@@ -1,4 +1,6 @@
 #include "ts-mpsc-queue.h"
+#include "mpscq.h"
+#include "util.h"
 
 /* Consumer API. */
 
@@ -128,3 +130,43 @@ ts_mpsc_queue_insert(struct ts_mpsc_queue *queue, struct ts_mpsc_queue_node *nod
     } while (!atomic_compare_exchange_weak_explicit(&queue->head, &next, node,
             memory_order_release, memory_order_relaxed));
 }
+
+static void
+ts_mpsc_queue_init_impl(struct mpscq_handle *hdl)
+{
+    ts_mpsc_queue_init(from_mpscq(hdl));
+}
+
+static bool
+ts_mpsc_queue_is_empty_impl(struct mpscq_handle *hdl)
+{
+    return ts_mpsc_queue_is_empty(from_mpscq(hdl));
+}
+
+static void
+ts_mpsc_queue_insert_impl(struct mpscq_handle *hdl, union mpscq_node *node)
+{
+    ts_mpsc_queue_insert(from_mpscq(hdl), &node->ts);
+}
+
+static union mpscq_node *
+ts_mpsc_queue_pop_impl(struct mpscq_handle *hdl)
+{
+    struct ts_mpsc_queue_node *node = ts_mpsc_queue_pop(from_mpscq(hdl));
+
+    if (node != NULL) {
+        return container_of(node, union mpscq_node, ts);
+    }
+    return NULL;
+}
+
+static struct ts_mpsc_queue static_ts_mpsc_queue;
+
+struct mpscq ts_mpsc_queue = {
+    .handle = to_mpscq(&static_ts_mpsc_queue),
+    .init = ts_mpsc_queue_init_impl,
+    .is_empty = ts_mpsc_queue_is_empty_impl,
+    .insert = ts_mpsc_queue_insert_impl,
+    .pop = ts_mpsc_queue_pop_impl,
+    .desc = "treiber-stack",
+};

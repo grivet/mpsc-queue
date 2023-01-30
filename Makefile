@@ -19,9 +19,11 @@ unit_OBJS += test/util.o
 unit: $(unit_OBJS)
 	$(CC) $(CFLAGS_ALL) -o $@ $^
 
-perf_OBJS := test/perf/perf.o
+perf_OBJS := test/perf/main.o
 perf_OBJS += test/util.o
-perf_OBJS += test/perf/ts-mpsc-queue.o
+perf_OBJS += test/mpsc-queue.o
+perf_OBJS += test/tailq.o
+perf_OBJS += test/ts-mpsc-queue.o
 ifeq ($(UNAME_S),Darwin)
 perf_OBJS += test/perf/pthread-barrier.o
 endif

@@ -82,6 +82,22 @@ void mpsc_queue_push_front(struct mpsc_queue *queue, struct mpsc_queue_node *nod
     atomic_store_explicit(&queue->tail, node, memory_order_relaxed);
 }
 
+static inline bool
+mpsc_queue_is_empty(struct mpsc_queue *queue)
+{
+    struct mpsc_queue_node *tail;
+    struct mpsc_queue_node *next;
+    struct mpsc_queue_node *head;
+
+    tail = atomic_load_explicit(&queue->tail, memory_order_relaxed);
+    next = atomic_load_explicit(&tail->next, memory_order_acquire);
+    head = atomic_load_explicit(&queue->head, memory_order_acquire);
+
+    return (tail == &queue->stub &&
+            next == NULL &&
+            tail == head);
+}
+
 static inline enum mpsc_queue_poll_result
 mpsc_queue_poll(struct mpsc_queue *queue, struct mpsc_queue_node **node)
 {
