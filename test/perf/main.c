@@ -68,29 +68,30 @@ producer_main(void *aux_)
     n_elems_per_thread = n_elems / n_threads;
     th_elements = &elements[id * n_elems_per_thread];
 
-    pthread_barrier_wait(&barrier);
-    xclock_gettime(&start);
+    while (true) {
+        pthread_barrier_wait(&barrier);
+        if (!working) {
+            break;
+        }
+        xclock_gettime(&start);
 
-    for (i = 0; i < n_elems_per_thread; i++) {
-        mpscq_insert(aux->queue, &th_elements[i].node);
+        for (i = 0; i < n_elems_per_thread; i++) {
+            mpscq_insert(aux->queue, &th_elements[i].node);
+        }
+
+        thread_working_ms[id] = elapsed(&start);
+        pthread_barrier_wait(&barrier);
     }
 
-    thread_working_ms[id] = elapsed(&start);
-    pthread_barrier_wait(&barrier);
-
-    working = false;
     return NULL;
 }
 
 static void
-benchmark_mpscq(struct mpscq *q)
+benchmark_mpscq(struct mpscq *q, struct mpscq_aux *aux)
 {
     union mpscq_node *node;
     struct timespec start;
     unsigned int counter;
-    struct mpscq_aux aux;
-    bool work_complete;
-    pthread_t *threads;
     uint64_t epoch;
     uint64_t avg;
     size_t i;
@@ -99,71 +100,45 @@ benchmark_mpscq(struct mpscq *q)
     memset(thread_working_ms, 0, n_threads & sizeof *thread_working_ms);
 
     mpscq_init(q);
-    aux.queue = q;
-    atomic_store(&aux.thread_id, 0);
+    aux->queue = q;
 
     for (i = n_elems - (n_elems % n_threads); i < n_elems; i++) {
         mpscq_insert(q, &elements[i].node);
     }
 
-    working = true;
-
-    threads = xmalloc(n_threads * sizeof *threads);
-    pthread_barrier_init(&barrier, NULL, n_threads);
-
-    for (i = 0; i < n_threads; i++) {
-        pthread_create(&threads[i], NULL, producer_main, &aux);
-    }
+    pthread_barrier_wait(&barrier);
 
     xclock_gettime(&start);
-
     counter = 0;
-    epoch = 1;
+    epoch = 0;
     do {
         while ((node = mpscq_pop(q))) {
             mark_element(node, epoch, &counter);
         }
-        if (epoch == UINT64_MAX)
-            epoch = 0;
         epoch++;
-    } while (working);
-
-    avg = 0;
-    for (i = 0; i < n_threads; i++) {
-        pthread_join(threads[i], NULL);
-        avg += thread_working_ms[i];
-    }
-    avg /= n_threads;
-
-    /* Elements might have been inserted before threads were joined. */
-    while ((node = mpscq_pop(q))) {
-        mark_element(node, epoch, &counter);
-    }
+    } while (counter != n_elems);
 
     printf("%*s:  %6lld", 15, q->desc, elapsed(&start));
+    pthread_barrier_wait(&barrier);
+
     for (i = 0; i < n_threads; i++) {
         printf(" %6" PRIu64, thread_working_ms[i]);
     }
+    avg = 0;
+    for (i = 0; i < n_threads; i++) {
+        avg += thread_working_ms[i];
+    }
+    avg /= n_threads;
     printf(" %6" PRIu64 " ms\n", avg);
 
-    pthread_barrier_destroy(&barrier);
-    free(threads);
-
-    work_complete = true;
-    for (i = 0; i < n_elems; i++) {
-        if (elements[i].mark == 0) {
-            printf("Element %zu was never consumed.\n", i);
-            work_complete = false;
-        }
-    }
-    assert(work_complete);
-    assert(counter == n_elems);
 }
 
 static void
 run_benchmarks(int argc, const char *argv[])
 {
     bool only_mpsc_queue = false;
+    struct mpscq_aux aux;
+    pthread_t *threads;
     size_t i;
 
     n_elems = 1000000;
@@ -182,25 +157,40 @@ run_benchmarks(int argc, const char *argv[])
         }
     }
 
-    elements = xcalloc(n_elems, sizeof *elements);
-    thread_working_ms = xcalloc(n_threads, sizeof *thread_working_ms);
-
     printf("Benchmarking n=%u on 1 + %u threads.\n", n_elems, n_threads);
-
     printf("    type\\thread:  Reader ");
     for (i = 0; i < n_threads; i++) {
         printf("   %3zu ", i + 1);
     }
     printf("   Avg\n");
 
-    benchmark_mpscq(&mpsc_queue);
+    atomic_store(&aux.thread_id, 0);
+
+    elements = xcalloc(n_elems, sizeof *elements);
+    thread_working_ms = xcalloc(n_threads, sizeof *thread_working_ms);
+    threads = xmalloc(n_threads * sizeof *threads);
+    pthread_barrier_init(&barrier, NULL, n_threads + 1);
+    working = true;
+
+    for (i = 0; i < n_threads; i++) {
+        pthread_create(&threads[i], NULL, producer_main, &aux);
+    }
+
     if (!only_mpsc_queue) {
-        benchmark_mpscq(&tailq);
-        benchmark_mpscq(&ts_mpsc_queue);
+        benchmark_mpscq(&ts_mpsc_queue, &aux);
+        benchmark_mpscq(&tailq, &aux);
+    }
+    benchmark_mpscq(&mpsc_queue, &aux);
+    working = false;
+    pthread_barrier_wait(&barrier);
+
+    for (i = 0; i < n_threads; i++) {
+        pthread_join(threads[i], NULL);
     }
 
     free(thread_working_ms);
     free(elements);
+    free(threads);
 }
 
 int main(int argc, const char *argv[])
