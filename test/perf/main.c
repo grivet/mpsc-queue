@@ -7,7 +7,7 @@
 #include <inttypes.h>
 
 #include <pthread.h>
-#if !defined _POSIX_BARRIERS
+#if __APPLE__
 #include "pthread-barrier.h"
 #endif
 

@@ -5,6 +5,7 @@ ifeq ($(UNAME_S),Darwin)
 CSTD := gnu11
 else
 CSTD := c11
+CFLAGS += -D_POSIX_C_SOURCE=200809L
 endif
 
 CFLAGS_ALL := -std=$(CSTD) -MD -Wall -Wextra -g3 $(CFLAGS)
