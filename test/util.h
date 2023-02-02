@@ -17,6 +17,8 @@
 
 #define ARRAY_SIZE(ar) (sizeof(ar) / sizeof(ar[0]))
 
+#define MIN(a, b) (a < b ? a : b)
+
 void out_of_memory(void);
 void *xcalloc(size_t count, size_t size);
 void *xzalloc(size_t size);

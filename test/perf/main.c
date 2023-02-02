@@ -24,6 +24,7 @@ static uint64_t *thread_working_ms;
 
 static unsigned int n_threads;
 static unsigned int n_elems;
+static bool warming;
 
 static pthread_barrier_t barrier;
 static volatile bool working;
@@ -65,14 +66,14 @@ producer_main(void *aux_)
     size_t i;
 
     id = atomic_fetch_add(&aux->thread_id, 1u);
-    n_elems_per_thread = n_elems / n_threads;
-    th_elements = &elements[id * n_elems_per_thread];
 
     while (true) {
         pthread_barrier_wait(&barrier);
         if (!working) {
             break;
         }
+        n_elems_per_thread = n_elems / n_threads;
+        th_elements = &elements[id * n_elems_per_thread];
         xclock_gettime(&start);
 
         for (i = 0; i < n_elems_per_thread; i++) {
@@ -89,6 +90,7 @@ producer_main(void *aux_)
 static void
 benchmark_mpscq(struct mpscq *q, struct mpscq_aux *aux)
 {
+    long long int consumer_time;
     union mpscq_node *node;
     struct timespec start;
     unsigned int counter;
@@ -118,8 +120,14 @@ benchmark_mpscq(struct mpscq *q, struct mpscq_aux *aux)
         epoch++;
     } while (counter != n_elems);
 
-    printf("%*s:  %6lld", 15, q->desc, elapsed(&start));
+    consumer_time = elapsed(&start);
     pthread_barrier_wait(&barrier);
+
+    if (warming) {
+        return;
+    }
+
+    printf("%*s:  %6lld", 15, q->desc, consumer_time);
 
     for (i = 0; i < n_threads; i++) {
         printf(" %6" PRIu64, thread_working_ms[i]);
@@ -157,13 +165,6 @@ run_benchmarks(int argc, const char *argv[])
         }
     }
 
-    printf("Benchmarking n=%u on 1 + %u threads.\n", n_elems, n_threads);
-    printf("    type\\thread:  Reader ");
-    for (i = 0; i < n_threads; i++) {
-        printf("   %3zu ", i + 1);
-    }
-    printf("   Avg\n");
-
     atomic_store(&aux.thread_id, 0);
 
     elements = xcalloc(n_elems, sizeof *elements);
@@ -176,11 +177,30 @@ run_benchmarks(int argc, const char *argv[])
         pthread_create(&threads[i], NULL, producer_main, &aux);
     }
 
+    {
+        unsigned int n_elems_memo = n_elems;
+
+        warming = true;
+        n_elems = MIN(n_elems, 100000);
+        benchmark_mpscq(&tailq, &aux);
+        benchmark_mpscq(&tailq, &aux);
+        benchmark_mpscq(&tailq, &aux);
+        n_elems = n_elems_memo;
+        warming = false;
+    }
+
+    printf("Benchmarking n=%u on 1 + %u threads.\n", n_elems, n_threads);
+    printf("    type\\thread:  Reader ");
+    for (i = 0; i < n_threads; i++) {
+        printf("   %3zu ", i + 1);
+    }
+    printf("   Avg\n");
+
+    benchmark_mpscq(&mpsc_queue, &aux);
     if (!only_mpsc_queue) {
         benchmark_mpscq(&ts_mpsc_queue, &aux);
         benchmark_mpscq(&tailq, &aux);
     }
-    benchmark_mpscq(&mpsc_queue, &aux);
     working = false;
     pthread_barrier_wait(&barrier);
 
