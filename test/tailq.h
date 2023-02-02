@@ -26,7 +26,7 @@ struct tailq_node {
     TAILQ_ENTRY(tailq_node) node;
 };
 
-TAILQ_HEAD(tailq_list, tailq_node) list;
+TAILQ_HEAD(tailq_list, tailq_node);
 
 struct tailq {
     struct tailq_list list;
