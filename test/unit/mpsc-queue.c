@@ -38,12 +38,14 @@ test_mpsc_queue_insert_ordered(void)
     for (i = 0; i < ARRAY_SIZE(elements); i++) {
         elements[i].id = i;
         mpsc_queue_insert(q, &elements[i].node);
+        assert(!mpsc_queue_is_empty(q));
     }
 
     i = 0;
     MPSC_QUEUE_FOR_EACH (node, q) {
         struct element *e = container_of(node, struct element, node);
         assert(e == &elements[i]);
+        assert(!mpsc_queue_is_empty(q));
         i++;
     }
     assert(i == ARRAY_SIZE(elements));
@@ -52,6 +54,7 @@ test_mpsc_queue_insert_ordered(void)
         struct element *e = container_of(node, struct element, node);
         assert(e->id == (unsigned int)(e - elements));
     }
+    assert(mpsc_queue_is_empty(q));
 
     mq_destroy(q);
 }
@@ -96,15 +99,18 @@ test_mpsc_queue_insert_partial(void)
     MPSC_QUEUE_FOR_EACH (node, q) {
         struct element *e = container_of(node, struct element, node);
         assert(e == &elements[i]);
+        assert(!mpsc_queue_is_empty(q));
         i++;
     }
     assert(i < ARRAY_SIZE(elements));
+    assert(!mpsc_queue_is_empty(q));
 
     for (i = 0; i < ARRAY_SIZE(elements); i++) {
         if (prevs[i] != NULL) {
             mpsc_queue_insert_end(prevs[i], &elements[i].node);
         }
     }
+    assert(!mpsc_queue_is_empty(q));
 
     i = 0;
     MPSC_QUEUE_FOR_EACH (node, q) {
@@ -118,6 +124,8 @@ test_mpsc_queue_insert_partial(void)
         struct element *e = container_of(node, struct element, node);
         assert(e->id == (unsigned int)(e - elements));
     }
+
+    assert(mpsc_queue_is_empty(q));
 
     mq_destroy(q);
 }
@@ -219,14 +227,18 @@ test_mpsc_queue_poll(void)
     /* Basic cases. */
 
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
+    assert(mpsc_queue_is_empty(q));
 
     mpsc_queue_insert(q, &elements[0].node);
+    assert(!mpsc_queue_is_empty(q));
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
 
     mpsc_queue_insert(q, &elements[0].node);
     mpsc_queue_insert(q, &elements[1].node);
+    assert(!mpsc_queue_is_empty(q));
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
+    assert(!mpsc_queue_is_empty(q));
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_ITEM);
     assert(mpsc_queue_poll(q, &node) == MPSC_QUEUE_EMPTY);
 
@@ -294,12 +306,15 @@ test_mpsc_queue_push_front(void)
 
     assert(mpsc_queue_pop(q) == NULL);
     mpsc_queue_push_front(q, &elements[0].node);
+    assert(!mpsc_queue_is_empty(q));
     node = mpsc_queue_pop(q);
     assert(node == &elements[0].node);
     assert(mpsc_queue_pop(q) == NULL);
+    assert(mpsc_queue_is_empty(q));
 
     mpsc_queue_push_front(q, &elements[0].node);
     mpsc_queue_push_front(q, &elements[1].node);
+    assert(!mpsc_queue_is_empty(q));
     assert(mpsc_queue_pop(q) == &elements[1].node);
     assert(mpsc_queue_pop(q) == &elements[0].node);
     assert(mpsc_queue_pop(q) == NULL);

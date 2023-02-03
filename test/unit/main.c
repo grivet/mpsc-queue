@@ -27,6 +27,8 @@ test_mpscq_insert(struct mpscq *q)
         mpscq_insert(q, &elements[i].node);
     }
 
+    assert(mpscq_is_empty(q) == false);
+
     while ((node = mpscq_pop(q))) {
         struct element *e = container_of(node, struct element, node);
         assert(e->id == (unsigned int)(e - elements));
