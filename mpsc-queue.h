@@ -19,7 +19,19 @@ struct mpsc_queue {
     struct mpsc_queue_node stub;
 };
 
+/* Producer API. */
+
+static inline
+void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node);
+
 /* Consumer API. */
+
+#define MPSC_QUEUE_FOR_EACH(node, queue) \
+    for (node = mpsc_queue_tail(queue); node != NULL; \
+         node = mpsc_queue_next((queue), node))
+
+#define MPSC_QUEUE_FOR_EACH_POP(node, queue) \
+    while ((node = mpsc_queue_pop(queue)))
 
 enum mpsc_queue_poll_result {
     MPSC_QUEUE_EMPTY,
@@ -51,21 +63,21 @@ struct mpsc_queue_node *
 mpsc_queue_next(struct mpsc_queue *queue,
                 struct mpsc_queue_node *prev);
 
-#define MPSC_QUEUE_FOR_EACH(node, queue) \
-    for (node = mpsc_queue_tail(queue); node != NULL; \
-         node = mpsc_queue_next((queue), node))
-
-#define MPSC_QUEUE_FOR_EACH_POP(node, queue) \
-    while ((node = mpsc_queue_pop(queue)))
-
-/* Producer API. */
-
-static inline
-void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node);
-
 /*******************/
 /* Implementation. */
 /*******************/
+
+/* Producer API. */
+
+static inline void
+mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node)
+{
+    struct mpsc_queue_node *prev;
+
+    atomic_store_explicit(&node->next, NULL, memory_order_relaxed);
+    prev = atomic_exchange_explicit(&queue->head, node, memory_order_acq_rel);
+    atomic_store_explicit(&prev->next, node, memory_order_release);
+}
 
 /* Consumer API. */
 
@@ -200,18 +212,6 @@ mpsc_queue_next(struct mpsc_queue *queue,
         next = atomic_load_explicit(&next->next, memory_order_acquire);
     }
     return next;
-}
-
-/* Producer API. */
-
-static inline void
-mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node)
-{
-    struct mpsc_queue_node *prev;
-
-    atomic_store_explicit(&node->next, NULL, memory_order_relaxed);
-    prev = atomic_exchange_explicit(&queue->head, node, memory_order_acq_rel);
-    atomic_store_explicit(&prev->next, node, memory_order_release);
 }
 
 #endif /* MPSC_QUEUE_H */
