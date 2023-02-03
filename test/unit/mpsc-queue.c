@@ -5,6 +5,7 @@
 #include <inttypes.h>
 
 #include "mpsc-queue.h"
+#include "unit.h"
 #include "util.h"
 
 struct element {
@@ -337,11 +338,11 @@ test_mpsc_queue_push_front(void)
     mq_destroy(q);
 }
 
-int main(void)
+void
+test_mpsc_queue(void)
 {
     test_mpsc_queue_insert_ordered();
     test_mpsc_queue_insert_partial();
     test_mpsc_queue_poll();
     test_mpsc_queue_push_front();
-    return 0;
 }

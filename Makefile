@@ -14,7 +14,8 @@ CFLAGS_ALL += -I$(CURDIR) -I$(CURDIR)/test
 test/%.o: test/%.c Makefile
 	$(CC) $(CFLAGS_ALL) -c -o $@ $<
 
-unit_OBJS := test/unit/unit.o
+unit_OBJS := test/unit/main.o
+unit_OBJS += test/unit/mpsc-queue.o
 unit_OBJS += test/util.o
 
 unit: $(unit_OBJS)
