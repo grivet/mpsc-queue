@@ -6,7 +6,7 @@ A simple C11 implementation of Vyukov multi-producer, single-consumer lockless q
 
 ```shell
 make           # Build tests
-make run       # Run tests
+make test      # Run tests
 make benchmark # Run benchmark
 ```
 

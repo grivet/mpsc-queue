@@ -41,10 +41,10 @@ else
 NPROC=$(shell nproc)
 endif
 
-.PHONY: run
-run: unit perf
-	$(WRAPPER) $(CURDIR)/unit \
-	&& $(WRAPPER) $(CURDIR)/perf -n 1000000 -c $$(($(NPROC) - 1))
+.PHONY: test
+test: unit perf
+	$(WRAPPER) $(CURDIR)/unit &&\
+	$(WRAPPER) $(CURDIR)/perf -n 1000000 -c $$(($(NPROC) - 1))
 
 .PHONY: benchmark
 benchmark: perf
