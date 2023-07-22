@@ -58,12 +58,15 @@ struct mpscq_aux {
 static void *
 producer_main(void *aux_)
 {
+#define BATCH_SIZE 64
+    union mpscq_node *batch[BATCH_SIZE];
     unsigned int n_elems_per_thread;
     struct element *th_elements;
     struct mpscq_aux *aux = aux_;
     struct timespec start;
+    unsigned int n_batch;
     unsigned int id;
-    size_t i;
+    size_t i, n;
 
     id = atomic_fetch_add(&aux->thread_id, 1u);
 
@@ -73,11 +76,19 @@ producer_main(void *aux_)
             break;
         }
         n_elems_per_thread = n_elems / n_threads;
+        n_batch = n_elems_per_thread / BATCH_SIZE;
         th_elements = &elements[id * n_elems_per_thread];
         xclock_gettime(&start);
 
-        for (i = 0; i < n_elems_per_thread; i++) {
-            mpscq_insert(aux->queue, &th_elements[i].node);
+        n = 0;
+        for (i = 0; i < n_batch; i++) {
+            for (size_t j = 0; j < BATCH_SIZE; j++) {
+                batch[j] = &th_elements[n++].node;
+            }
+            mpscq_insert_batch(aux->queue, BATCH_SIZE, batch);
+        }
+        while (n < n_elems_per_thread) {
+            mpscq_insert(aux->queue, &th_elements[n++].node);
         }
 
         thread_working_ms[id] = elapsed(&start);
@@ -198,7 +209,7 @@ run_benchmarks(int argc, const char *argv[])
 
     benchmark_mpscq(&mpsc_queue, &aux);
     if (!only_mpsc_queue) {
-        benchmark_mpscq(&ts_mpsc_queue, &aux);
+        //benchmark_mpscq(&ts_mpsc_queue, &aux);
         benchmark_mpscq(&tailq, &aux);
     }
     working = false;

@@ -31,7 +31,10 @@ struct tailq_node {
 TAILQ_HEAD(tailq_list, tailq_node);
 
 struct tailq {
-    struct tailq_list list;
+    /* Producer's list. */
+    struct tailq_list plist;
+    /* Consumer list. */
+    struct tailq_list clist;
     tailq_lock_type lock;
 };
 

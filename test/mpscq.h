@@ -24,6 +24,8 @@ struct mpscq {
     void (*init)(struct mpscq_handle *q);
     bool (*is_empty)(struct mpscq_handle *q);
     void (*insert)(struct mpscq_handle *q, union mpscq_node *node);
+    void (*insert_batch)(struct mpscq_handle *q, size_t n_nodes,
+                         union mpscq_node *node_ptrs[n_nodes]);
     union mpscq_node *(*pop)(struct mpscq_handle *q);
     const char *desc;
 };
@@ -47,6 +49,19 @@ static inline void
 mpscq_insert(struct mpscq *q, union mpscq_node *node)
 {
     q->insert(q->handle, node);
+}
+
+static inline void
+mpscq_insert_batch(struct mpscq *q, size_t n_nodes,
+                   union mpscq_node *node_ptrs[n_nodes])
+{
+    if (q->insert_batch) {
+        q->insert_batch(q->handle, n_nodes, node_ptrs);
+    } else {
+        for (size_t i = 0; i < n_nodes; i++) {
+            mpscq_insert(q, node_ptrs[i]);
+        }
+    }
 }
 
 static inline union mpscq_node *

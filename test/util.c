@@ -8,6 +8,14 @@
 
 #include "util.h"
 
+uint32_t rand_seed;
+
+void
+random_init(uint32_t seed)
+{
+    rand_seed = seed;
+}
+
 void
 xabort(const char *msg)
 {
@@ -65,6 +73,15 @@ long long int
 timespec_to_usec(const struct timespec *ts)
 {
     return (long long int) ts->tv_sec * 1000 * 1000 + ts->tv_nsec / 1000;
+}
+
+long long int
+time_usec(void)
+{
+    struct timespec ts;
+
+    xclock_gettime(&ts);
+    return timespec_to_usec(&ts);
 }
 
 bool

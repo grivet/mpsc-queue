@@ -24,6 +24,22 @@ struct mpsc_queue {
 static inline
 void mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node);
 
+/* Insert a list of nodes in a single operation.
+ * The nodes must all be appropriately linked from
+ * first to last. */
+static inline
+void mpsc_queue_insert_list(struct mpsc_queue *queue,
+                            struct mpsc_queue_node *first,
+                            struct mpsc_queue_node *last);
+
+/* Insert a number of nodes at once.
+ * The nodes will be linked together before
+ * being inserted in the queue. */
+static inline
+void mpsc_queue_insert_batch(struct mpsc_queue *queue,
+                             size_t n_nodes,
+                             struct mpsc_queue_node *node_ptrs[n_nodes]);
+
 /* Consumer API. */
 
 #define MPSC_QUEUE_FOR_EACH(node, queue) \
@@ -72,11 +88,41 @@ mpsc_queue_next(struct mpsc_queue *queue,
 static inline void
 mpsc_queue_insert(struct mpsc_queue *queue, struct mpsc_queue_node *node)
 {
+    mpsc_queue_insert_list(queue, node, node);
+}
+
+static inline
+void mpsc_queue_insert_list(struct mpsc_queue *queue,
+                            struct mpsc_queue_node *first,
+                            struct mpsc_queue_node *last)
+{
     struct mpsc_queue_node *prev;
 
-    atomic_store_explicit(&node->next, NULL, memory_order_relaxed);
-    prev = atomic_exchange_explicit(&queue->head, node, memory_order_acq_rel);
-    atomic_store_explicit(&prev->next, node, memory_order_release);
+    atomic_store_explicit(&last->next, NULL, memory_order_relaxed);
+    prev = atomic_exchange_explicit(&queue->head, last, memory_order_acq_rel);
+    atomic_store_explicit(&prev->next, first, memory_order_release);
+}
+
+static inline
+void mpsc_queue_insert_batch(struct mpsc_queue *queue,
+                             size_t n_nodes,
+                             struct mpsc_queue_node *node_ptrs[n_nodes])
+{
+    struct mpsc_queue_node *first, *last, *node;
+
+    if (n_nodes == 0) {
+        return;
+    }
+
+    first = node_ptrs[0];
+    last = node_ptrs[n_nodes - 1];
+
+    for (size_t i = 0; i < n_nodes - 1; i++) {
+        node = node_ptrs[i];
+        atomic_store_explicit(&node->next, node_ptrs[i + 1],
+                              memory_order_relaxed);
+    }
+    mpsc_queue_insert_list(queue, first, last);
 }
 
 /* Consumer API. */

@@ -130,6 +130,52 @@ test_mpsc_queue_insert_partial(void)
     mq_destroy(q);
 }
 
+static void
+test_mpsc_queue_insert_batch(void)
+{
+#define BATCH_SIZE 64
+#define N_ELEMS 1000
+    struct mpsc_queue_node *batch[BATCH_SIZE];
+    struct element elements[N_ELEMS];
+    struct mpsc_queue_node *node;
+    struct mpsc_queue *q;
+    size_t i;
+
+    random_init(time_usec());
+
+    q = mq_create();
+
+    for (i = 0; i < N_ELEMS;) {
+        size_t n_nodes = MAX(1, random_u32_range(MIN(BATCH_SIZE, N_ELEMS - i)));
+
+        for (size_t j = 0; j < n_nodes; j++) {
+            elements[i + j].id = i + j;
+            batch[j] = &elements[i + j].node;
+        }
+        mpsc_queue_insert_batch(q, n_nodes, batch);
+        assert(!mpsc_queue_is_empty(q));
+
+        i += n_nodes;
+    }
+
+    i = 0;
+    MPSC_QUEUE_FOR_EACH (node, q) {
+        struct element *e = container_of(node, struct element, node);
+        assert(e == &elements[i]);
+        assert(!mpsc_queue_is_empty(q));
+        i++;
+    }
+    assert(i == ARRAY_SIZE(elements));
+
+    MPSC_QUEUE_FOR_EACH_POP (node, q) {
+        struct element *e = container_of(node, struct element, node);
+        assert(e->id == (unsigned int)(e - elements));
+    }
+    assert(mpsc_queue_is_empty(q));
+
+    mq_destroy(q);
+}
+
 struct mpsc_queue_poll_ctx {
     struct mpsc_queue *queue;
     struct mpsc_queue_node *tail;
@@ -358,6 +404,7 @@ test_mpsc_queue(void)
 {
     test_mpsc_queue_insert_ordered();
     test_mpsc_queue_insert_partial();
+    test_mpsc_queue_insert_batch();
     test_mpsc_queue_poll();
     test_mpsc_queue_push_front();
 }
