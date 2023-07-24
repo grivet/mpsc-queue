@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 BIN=${1}
 N_ELEM=${2:-1000000}
@@ -95,7 +95,8 @@ done
 
 #cat $tmp
 
-nb_col=$(awk -F$'\t' '{print NF-1}' $tmp | head -1)
+TAB="$(printf '%b_' '\t')"; TAB="${TAB%_}"
+nb_col=$(awk "-F${TAB}" '{print NF-1}' $tmp | head -1)
 maxlen=0
 for i in $(seq 1 $nb_col); do
     name=$(head -1 $tmp | cut -d$'\t' -f$i)
