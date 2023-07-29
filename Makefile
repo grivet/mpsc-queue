@@ -1,4 +1,4 @@
-all: unit perf
+all: unit bench
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
@@ -26,13 +26,13 @@ unit_OBJS += $(test_OBJS)
 unit: $(unit_OBJS)
 	$(CC) $(CFLAGS_ALL) -o $@ $^
 
-perf_OBJS := test/perf/main.o
-perf_OBJS += $(test_OBJS)
+bench_OBJS := test/bench/main.o
+bench_OBJS += $(test_OBJS)
 ifeq ($(UNAME_S),Darwin)
-perf_OBJS += test/perf/pthread-barrier.o
+bench_OBJS += test/bench/pthread-barrier.o
 endif
 
-perf: $(perf_OBJS)
+bench: $(bench_OBJS)
 	$(CC) $(CFLAGS_ALL) -pthread -O3 -o $@ $^
 
 ifeq ($(UNAME_S),Darwin)
@@ -42,20 +42,20 @@ NPROC=$(shell nproc)
 endif
 
 .PHONY: test
-test: unit perf
+test: unit bench
 	$(WRAPPER) $(CURDIR)/unit &&\
-	$(WRAPPER) $(CURDIR)/perf -n 1000000 -c $$(($(NPROC) - 1))
+	$(WRAPPER) $(CURDIR)/bench -n 1000000 -c $$(($(NPROC) - 1))
 
-.PHONY: benchmark
-benchmark: perf
-	$(CURDIR)/test/perf/stats.sh $(CURDIR)/perf 1000000 1
-	$(CURDIR)/test/perf/stats.sh $(CURDIR)/perf 1000000 2
-	$(CURDIR)/test/perf/stats.sh $(CURDIR)/perf 1000000 4
+.PHONY: bench
+benchmark: bench
+	$(CURDIR)/tools/bench.py -n 10 -- $(CURDIR)/bench 1000000 1
+	$(CURDIR)/tools/bench.py -n 10 -- $(CURDIR)/bench 1000000 2
+	$(CURDIR)/tools/bench.py -n 10 -- $(CURDIR)/bench 1000000 4
 
--include test/perf/*.d
+-include test/bench/*.d
 -include test/unit/*.d
 
 .PHONY: clean
 clean:
 	rm -f unit $(unit_OBJS) $(unit_OBJS:%.o=%.d)
-	rm -f perf $(perf_OBJS) $(perf_OBJS:%.o=%.d)
+	rm -f bench $(bench_OBJS) $(bench_OBJS:%.o=%.d)
