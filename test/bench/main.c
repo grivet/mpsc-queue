@@ -155,6 +155,7 @@ benchmark_mpscq(struct mpscq *q, struct mpscq_aux *aux)
 static void
 run_benchmarks(int argc, const char *argv[])
 {
+    bool with_treiber_stack = false;
     bool only_mpsc_queue = false;
     struct mpscq_aux aux;
     pthread_t *threads;
@@ -170,6 +171,8 @@ run_benchmarks(int argc, const char *argv[])
             assert(str_to_uint(argv[++i], 10, &n_threads));
         } else if (!strcmp(argv[i], "--perf")) {
             only_mpsc_queue = true;
+        } else if (!strcmp(argv[i], "--with-treiber-stack")) {
+            with_treiber_stack = true;
         } else {
             printf("Usage: %s [-n <elems: uint>] [-c <cores: uint>]\n", argv[0]);
             exit(1);
@@ -209,8 +212,10 @@ run_benchmarks(int argc, const char *argv[])
 
     benchmark_mpscq(&mpsc_queue, &aux);
     if (!only_mpsc_queue) {
-        //benchmark_mpscq(&ts_mpsc_queue, &aux);
         benchmark_mpscq(&tailq, &aux);
+        if (with_treiber_stack) {
+            benchmark_mpscq(&ts_mpsc_queue, &aux);
+        }
     }
     working = false;
     pthread_barrier_wait(&barrier);
