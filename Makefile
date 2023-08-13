@@ -41,16 +41,24 @@ else
 NPROC=$(shell nproc)
 endif
 
-.PHONY: test
-test: unit bench
+.PHONY: run
+run: unit bench
 	$(WRAPPER) $(CURDIR)/unit &&\
-	$(WRAPPER) $(CURDIR)/bench -n 1000000 -c $$(($(NPROC) - 1))
+	$(WRAPPER) $(CURDIR)/bench -n 10000000 -c $$(($(NPROC) - 1))
 
-.PHONY: bench
-benchmark: bench
-	$(CURDIR)/tools/bench.py -n 10 -- $(CURDIR)/bench 1000000 1
-	$(CURDIR)/tools/bench.py -n 10 -- $(CURDIR)/bench 1000000 2
-	$(CURDIR)/tools/bench.py -n 10 -- $(CURDIR)/bench 1000000 4
+.PHONY: benchmark
+benchmark: bench | results
+	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 1 > $(CURDIR)/results/1.csv
+	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 2 > $(CURDIR)/results/2.csv
+	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 4 > $(CURDIR)/results/4.csv
+	$(CURDIR)/tools/bench.py show $(CURDIR)/results/1.csv
+	$(CURDIR)/tools/bench.py show $(CURDIR)/results/2.csv
+	$(CURDIR)/tools/bench.py show $(CURDIR)/results/4.csv
+	$(CURDIR)/tools/bench.py compare $(CURDIR)/results/{1,2,4}.csv
+
+.PHONY: results
+results:
+	@mkdir -p $(CURDIR)/results
 
 -include test/bench/*.d
 -include test/unit/*.d

@@ -19,6 +19,8 @@ struct element {
     uint64_t mark;
 };
 
+static bool print_csv;
+
 static struct element *elements;
 static uint64_t *thread_working_ms;
 
@@ -36,6 +38,43 @@ elapsed(const struct timespec *start)
 
     xclock_gettime(&end);
     return timespec_to_msec(&end) - timespec_to_msec(start);
+}
+
+static void
+print_header(void)
+{
+    if (!print_csv) {
+        printf("Benchmarking n=%u on 1 + %u threads.\n", n_elems, n_threads);
+        printf("    type\\thread:  Reader ");
+        for (unsigned int i = 0; i < n_threads; i++) {
+            printf("   %3u ", i + 1);
+        }
+        printf("   Avg\n");
+    }
+}
+
+static void
+print_test_result(struct mpscq *q, long long int consumer_time)
+{
+    unsigned int i;
+    uint64_t avg;
+
+    avg = 0;
+    for (i = 0; i < n_threads; i++) {
+        avg += thread_working_ms[i];
+    }
+    avg /= n_threads;
+
+    if (print_csv) {
+        printf("%s-consumer,%lld\n", q->desc, consumer_time);
+        printf("%s-producers-avg,%" PRIu64 "\n", q->desc, avg);
+    } else {
+        printf("%*s:  %6lld", 15, q->desc, consumer_time);
+        for (i = 0; i < n_threads; i++) {
+            printf(" %6" PRIu64, thread_working_ms[i]);
+        }
+        printf(" %6" PRIu64 " ms\n", avg);
+    }
 }
 
 static void
@@ -106,7 +145,6 @@ benchmark_mpscq(struct mpscq *q, struct mpscq_aux *aux)
     struct timespec start;
     unsigned int counter;
     uint64_t epoch;
-    uint64_t avg;
     size_t i;
 
     memset(elements, 0, n_elems & sizeof *elements);
@@ -138,18 +176,7 @@ benchmark_mpscq(struct mpscq *q, struct mpscq_aux *aux)
         return;
     }
 
-    printf("%*s:  %6lld", 15, q->desc, consumer_time);
-
-    for (i = 0; i < n_threads; i++) {
-        printf(" %6" PRIu64, thread_working_ms[i]);
-    }
-    avg = 0;
-    for (i = 0; i < n_threads; i++) {
-        avg += thread_working_ms[i];
-    }
-    avg /= n_threads;
-    printf(" %6" PRIu64 " ms\n", avg);
-
+    print_test_result(q, consumer_time);
 }
 
 static void
@@ -173,6 +200,8 @@ run_benchmarks(int argc, const char *argv[])
             only_mpsc_queue = true;
         } else if (!strcmp(argv[i], "--with-treiber-stack")) {
             with_treiber_stack = true;
+        } else if (!strcmp(argv[i], "--csv")) {
+            print_csv = true;
         } else {
             printf("Usage: %s [-n <elems: uint>] [-c <cores: uint>]\n", argv[0]);
             exit(1);
@@ -203,12 +232,7 @@ run_benchmarks(int argc, const char *argv[])
         warming = false;
     }
 
-    printf("Benchmarking n=%u on 1 + %u threads.\n", n_elems, n_threads);
-    printf("    type\\thread:  Reader ");
-    for (i = 0; i < n_threads; i++) {
-        printf("   %3zu ", i + 1);
-    }
-    printf("   Avg\n");
+    print_header();
 
     benchmark_mpscq(&mpsc_queue, &aux);
     if (!only_mpsc_queue) {

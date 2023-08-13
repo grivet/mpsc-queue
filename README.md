@@ -6,7 +6,7 @@ A simple C11 implementation of Vyukov multi-producer, single-consumer lockless q
 
 ```shell
 make           # Build tests
-make test      # Run tests
+make run       # Run tests
 make benchmark # Run benchmark
 ```
 
@@ -53,12 +53,14 @@ threads should be used or insertions should be done outside cancellable sections
 
 ## Benchmark
 
-The test application serves both as a validation for the implementation and as a benchmark.
-Another possible implementation of an MPSC queue requiring only one Compare-And-Swap (CAS) per
-insertion is based on a Treiber stack [2], being reversed during element removal.
+A simple benchmark was implemented to compare several MPSC queue implementations.
 
-With low number of threads, on x86 both queues are shown to be competitive. As thread numbers grow
-however, an exchange operation can scale, while CAS will not.
+Vyukov's queue is compared mainly against a basic doubly-linked intrusive list with
+a lock, referenced as `tailq` during tests.
+
+Additionally, a Treiber stack [2] is implemented, requiring only one Compare-And-Swap (CAS) per
+insertion, reversing the stack during element removal. This specific implementation is
+found very quickly insufficient and is only kept as a curiosity.
 
 ## References
 
