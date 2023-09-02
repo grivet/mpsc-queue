@@ -14,6 +14,9 @@
 #include "mpscq.h"
 #include "util.h"
 
+#define MAX_BATCH_SIZE 64
+#define DEFAULT_BATCH_SIZE 64
+
 struct element {
     union mpscq_node node;
     uint64_t mark;
@@ -24,6 +27,7 @@ static bool print_csv;
 static struct element *elements;
 static uint64_t *thread_working_ms;
 
+static unsigned int batch_size;
 static unsigned int n_threads;
 static unsigned int n_elems;
 static bool warming;
@@ -44,7 +48,8 @@ static void
 print_header(void)
 {
     if (!print_csv) {
-        printf("Benchmarking n=%u on 1 + %u threads.\n", n_elems, n_threads);
+        printf("Benchmarking n=%u,batch=%u on 1 + %u threads.\n",
+                n_elems, batch_size, n_threads);
         printf("    type\\thread:  Reader ");
         for (unsigned int i = 0; i < n_threads; i++) {
             printf("   %3u ", i + 1);
@@ -66,8 +71,10 @@ print_test_result(struct mpscq *q, long long int consumer_time)
     avg /= n_threads;
 
     if (print_csv) {
-        printf("%s-consumer,%lld\n", q->desc, consumer_time);
-        printf("%s-producers-avg,%" PRIu64 "\n", q->desc, avg);
+        printf("%s-%u-consumer,%lld\n",
+               q->desc, batch_size, consumer_time);
+        printf("%s-%u-producers-avg,%" PRIu64 "\n",
+               q->desc, batch_size, avg);
     } else {
         printf("%*s:  %6lld", 15, q->desc, consumer_time);
         for (i = 0; i < n_threads; i++) {
@@ -97,8 +104,7 @@ struct mpscq_aux {
 static void *
 producer_main(void *aux_)
 {
-#define BATCH_SIZE 64
-    union mpscq_node *batch[BATCH_SIZE];
+    union mpscq_node *batch[MAX_BATCH_SIZE];
     unsigned int n_elems_per_thread;
     struct element *th_elements;
     struct mpscq_aux *aux = aux_;
@@ -115,16 +121,16 @@ producer_main(void *aux_)
             break;
         }
         n_elems_per_thread = n_elems / n_threads;
-        n_batch = n_elems_per_thread / BATCH_SIZE;
+        n_batch = n_elems_per_thread / batch_size;
         th_elements = &elements[id * n_elems_per_thread];
         xclock_gettime(&start);
 
         n = 0;
         for (i = 0; i < n_batch; i++) {
-            for (size_t j = 0; j < BATCH_SIZE; j++) {
+            for (size_t j = 0; j < batch_size; j++) {
                 batch[j] = &th_elements[n++].node;
             }
-            mpscq_insert_batch(aux->queue, BATCH_SIZE, batch);
+            mpscq_insert_batch(aux->queue, batch_size, batch);
         }
         while (n < n_elems_per_thread) {
             mpscq_insert(aux->queue, &th_elements[n++].node);
@@ -188,6 +194,7 @@ run_benchmarks(int argc, const char *argv[])
     pthread_t *threads;
     size_t i;
 
+    batch_size = DEFAULT_BATCH_SIZE;
     n_elems = 1000000;
     n_threads = 2;
 
@@ -202,10 +209,18 @@ run_benchmarks(int argc, const char *argv[])
             with_treiber_stack = true;
         } else if (!strcmp(argv[i], "--csv")) {
             print_csv = true;
+        } else if (!strcmp(argv[i], "-b")) {
+            assert(str_to_uint(argv[++i], 10, &batch_size));
         } else {
             printf("Usage: %s [-n <elems: uint>] [-c <cores: uint>]\n", argv[0]);
             exit(1);
         }
+    }
+
+    if (batch_size > MAX_BATCH_SIZE) {
+        fprintf(stderr, "Using maximum allowed batch size: %u",
+                MAX_BATCH_SIZE);
+        batch_size = MAX_BATCH_SIZE;
     }
 
     atomic_store(&aux.thread_id, 0);

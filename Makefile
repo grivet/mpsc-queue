@@ -46,15 +46,19 @@ run: unit bench
 	$(WRAPPER) $(CURDIR)/unit &&\
 	$(WRAPPER) $(CURDIR)/bench -n 10000000 -c $$(($(NPROC) - 1))
 
+BATCH_SIZE ?= 64
+
 .PHONY: benchmark
 benchmark: bench | results
-	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 1 > $(CURDIR)/results/1.csv
-	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 2 > $(CURDIR)/results/2.csv
-	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 4 > $(CURDIR)/results/4.csv
+	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 1 -b $(BATCH_SIZE) > $(CURDIR)/results/1.csv
+	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 2 -b $(BATCH_SIZE) > $(CURDIR)/results/2.csv
+	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 4 -b $(BATCH_SIZE) > $(CURDIR)/results/4.csv
+	$(CURDIR)/tools/bench.py run -- $(CURDIR)/bench --csv -n 10000000 -c 8 -b $(BATCH_SIZE) > $(CURDIR)/results/8.csv
 	$(CURDIR)/tools/bench.py show $(CURDIR)/results/1.csv
 	$(CURDIR)/tools/bench.py show $(CURDIR)/results/2.csv
 	$(CURDIR)/tools/bench.py show $(CURDIR)/results/4.csv
-	$(CURDIR)/tools/bench.py compare $(CURDIR)/results/{1,2,4}.csv
+	$(CURDIR)/tools/bench.py show $(CURDIR)/results/8.csv
+	$(CURDIR)/tools/bench.py compare $(CURDIR)/results/{1,2,4,8}.csv
 
 .PHONY: results
 results:
